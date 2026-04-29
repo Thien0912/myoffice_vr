@@ -1,0 +1,82 @@
+Package Report
+
+-----------------------------------------------------------------------------
+Document:
+Name: id card nhan vien ver 5.ai
+Color Mode: RGB color
+Color Profile: sRGB IEC61966-2.1
+Ruler Units: centimeters
+Artboard Dimensions: 8.6 cm x 5.4 cm
+Show Images in Outline Mode: OFF
+Highlight Substituted Fonts: OFF
+Highlight Substituted Glyphs: OFF
+Preserve Text Editability
+Simulate Colored Paper: OFF
+
+-----------------------------------------------------------------------------
+Spot Color Objects:
+
+-----------------------------------------------------------------------------
+Missing Fonts:NONE
+
+-----------------------------------------------------------------------------
+Protected Fonts that were not packaged:NONE
+
+-----------------------------------------------------------------------------
+Fonts:
+Montserrat ExtraBold (TrueType)
+Montserrat Black (TrueType)
+Be Vietnam Pro SemiBold (TrueType)
+Be Vietnam Pro SemiBold Italic (TrueType)
+Be Vietnam Pro ExtraBold (TrueType)
+Be Vietnam Pro Black (TrueType)
+SVN-Gilroy XBold Italic (OTF)
+SVN-Gilroy SemiBold (OTF)
+SVN-Gilroy XLight (OTF)
+SVN-Gilroy XBold (OTF)
+
+-----------------------------------------------------------------------------
+Embedded Fonts:
+NONE
+
+-----------------------------------------------------------------------------
+Missing Links:
+NONE
+
+-----------------------------------------------------------------------------
+Linked Images:
+
+C:\Users\Admin\Downloads\z7174956839808_cf306972943d1c1459ceac5ec910b63b.jpg
+Type: RGB
+Bits per Pixel: 24
+Channels: 3
+Size: 391K, 454 by 294 pixels
+Dimensions: 236.646 by 153.247 points 
+Resolution: 138.13 by 138.13 pixels per inch
+
+
+D:\ID CARD\id card nhan vien_Folder FN - Copy\Links\Chau anh the 1408 FN.png
+Type: Transparent RGB
+Bits per Pixel: 32
+Channels: 4
+Size: 12296K, 1537 by 2048 pixels
+Dimensions: 1069.101 by 1425.468 points 
+Resolution: 103.511 by 103.444 pixels per inch
+
+
+D:\ID CARD\id card nhan vien_Folder FN - Copy\Links\Chau anh the 1408 FN.png
+Type: Transparent RGB
+Bits per Pixel: 32
+Channels: 4
+Size: 12296K, 1537 by 2048 pixels
+Dimensions: 59.528 by 79.37 points 
+Resolution: 1859.038 by 1857.829 pixels per inch
+
+
+D:\ID CARD\id card nhan vien_Folder FN - Copy\Links\Chau anh the 1408 FN.png
+Type: Transparent RGB
+Bits per Pixel: 32
+Channels: 4
+Size: 12296K, 1537 by 2048 pixels
+Dimensions: 59.528 by 79.37 points 
+Resolution: 1859.038 by 1857.829 pixels per inch

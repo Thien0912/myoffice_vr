@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /v2/
+
+  # Nếu file/folder tồn tại → load bình thường
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Ngược lại, rewrite về index.html
+  RewriteRule ^ index.html [L]
+</IfModule>

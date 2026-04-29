@@ -1,0 +1,15 @@
+﻿import { useState } from 'react'
+
+function Versions(): React.JSX.Element {
+  const [versions] = useState(window.electron.process.versions)
+
+  return (
+    <ul className="versions flex-col items-center gap-4 text-xs italic">
+      <li className="electron-version">Electron v{versions.electron}</li>
+      <li className="chrome-version">Chromium v{versions.chrome}</li>
+      <li className="node-version">Node v{versions.node}</li>
+    </ul>
+  )
+}
+
+export default Versions
