@@ -344,7 +344,7 @@ export const ROUTES = [
                         description: 'Quản lý các mục dùng chung trong hệ thống',
                         path: 'hrm/danh-muc',
                         hide: false,
-                        permission: ['danhmuc', 'donvi', 'loaivanban', 'chucvu'],
+                        permission: false,
                         Component: lazy(() => import('@renderer/pages/category/DanhmucPage')),
                         children: []
                     },
