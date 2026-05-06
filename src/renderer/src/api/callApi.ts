@@ -72,7 +72,14 @@ export const callApi = async (
   if (method.toUpperCase() === 'GET') {
     config.params = data // 👈 GET => đưa vào query string
   } else {
-    config.data = data // 👈 POST, PUT => đưa vào payload
+    // 👈 POST, PUT => đưa vào payload, tránh gửi {} rỗng gây lỗi 500 ở một số PHP API
+    const isEmptyPlainObject =
+      data &&
+      typeof data === 'object' &&
+      !Array.isArray(data) &&
+      !(data instanceof FormData) &&
+      Object.keys(data).length === 0
+    config.data = isEmptyPlainObject ? undefined : data
   }
 
   // Nếu debug => in log

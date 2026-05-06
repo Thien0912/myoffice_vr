@@ -57,7 +57,8 @@ export const useTableResizing = (
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
       const { startX, startWidth, uid, baseLeft } = resizingRef.current
 
-      const diff = clientX - startX
+      const zoom = parseFloat(getComputedStyle(guideLineRef.current?.parentElement || document.body).zoom) || 1
+      const diff = (clientX - startX) / zoom
       const col = columns.find((c) => c.uid === uid)
       const minWidth = col?.minWidth || 20
       const effectiveDiff = Math.max(diff, minWidth - startWidth)
@@ -113,11 +114,13 @@ export const useTableResizing = (
           `th[data-col-uid="${uid}"]`
         ) as HTMLElement
 
+        const zoom = parseFloat(getComputedStyle(containerRef.current).zoom) || 1
+
         if (thEl) {
           const colRect = thEl.getBoundingClientRect()
-          baseLeft = colRect.right - containerRect.left + containerRef.current.scrollLeft
+          baseLeft = (colRect.right - containerRect.left) / zoom + containerRef.current.scrollLeft
         } else {
-          baseLeft = clientX - containerRect.left + containerRef.current.scrollLeft
+          baseLeft = (clientX - containerRect.left) / zoom + containerRef.current.scrollLeft
         }
       }
 

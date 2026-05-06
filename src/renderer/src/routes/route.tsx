@@ -340,11 +340,11 @@ export const ROUTES = [
                 permission: undefined,
                 children: [
                     {
-                        title: 'Danh mục dùng chung',
+                        title: 'Danh mục',
                         description: 'Quản lý các mục dùng chung trong hệ thống',
                         path: 'hrm/danh-muc',
                         hide: false,
-                        permission: false,
+                        permission: ['danhmuc', 'donvi', 'loaivanban', 'chucvu'],
                         Component: lazy(() => import('@renderer/pages/category/DanhmucPage')),
                         children: []
                     },

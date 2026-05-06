@@ -77,8 +77,9 @@ function TableHrRowComponent<T extends Record<string, unknown>>({
           <Checkbox
             isSelected={isSelected}
             onValueChange={() => toggleRow(String(rowId))}
-            className={`${isSelected ? 'flex' : 'hidden group-hover:flex'} m-0 p-0`}
-            classNames={{ wrapper: 'm-0' }}
+            size="sm"
+            className="flex m-0 p-0"
+            classNames={{ wrapper: 'm-0 before:!border-black' }}
             aria-label="Select row"
           />
         </div>

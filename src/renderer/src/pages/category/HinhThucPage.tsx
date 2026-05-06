@@ -4,7 +4,7 @@ import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Edit, Plus, RotateCcw, Search, Trash } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
@@ -32,6 +32,7 @@ export default function HinhThucPage() {
     const [isResetting, setIsResetting] = useState(false)
     const [typingValue, setTypingValue] = useState(filters.searchValue)
     const [formData, setFormData] = useState<Record<string, any>>({})
+    const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
 
     // Confirm Modal State
     const [deletingId, setDeletingId] = useState<(string | number) | (string | number)[] | null>(null)
@@ -54,7 +55,7 @@ export default function HinhThucPage() {
         onClose: onCloseConfirmEdit
     } = useDisclosure()
 
-    // Drawer / Edit states (Placeholder for now)
+    // Drawer / Edit states
     const [editingId, setEditingId] = useState<string | number | null>(null)
     const {
         isOpen: isOpenDrawerAdd,
@@ -108,29 +109,99 @@ export default function HinhThucPage() {
     const handleResetTable = () => {
         setIsResetting(true)
         setTypingValue('')
+        setSelectedKeys(new Set())
         reset()
         setTimeout(() => {
             setIsResetting(false)
         }, 500)
     }
 
-    const handleDelete = (id: string | number) => {
-        setDeletingId(id)
+    const selectedRows = useMemo(() => {
+        if (!responseData?.data) return []
+        return responseData.data.filter((row: any) => selectedKeys.has(String(row.id_hinh_thuc)))
+    }, [responseData, selectedKeys])
+
+    const selectedCount = selectedKeys.size
+    const canCopy = selectedCount > 0
+    const canEdit = selectedCount === 1
+    const canDelete = selectedCount > 0
+
+    const handleCopyRows = async () => {
+        if (selectedRows.length === 0) return
+        try {
+            const promises = selectedRows.map((row: any) => {
+                const payload = {
+                    ten_hinh_thuc: row.ten_hinh_thuc + ' (Copy)',
+                    ma_hinh_thuc: row.ma_hinh_thuc,
+                }
+                return hinhthucAxios.create(payload)
+            })
+            const results = await Promise.all(promises)
+            const allSuccess = results.every((r: any) => r.success)
+            if (allSuccess) {
+                toast(`Sao chép thành công ${selectedRows.length} hình thức`, { variant: 'success' })
+                setSelectedKeys(new Set())
+                refetch()
+            } else {
+                toast('Một số hình thức sao chép thất bại', { variant: 'danger' })
+            }
+        } catch (error) {
+            toast('Có lỗi xảy ra khi sao chép', { variant: 'danger' })
+        }
+    }
+
+    const handleOpenEdit = async () => {
+        if (selectedRows.length !== 1) return
+        const row = selectedRows[0]
+        setEditingId(row.id_hinh_thuc)
+        try {
+            const detail = await hinhthucAxios.fetch({}, row.id_hinh_thuc)
+            if (detail.success && detail.data) {
+                setFormData({
+                    ten_hinh_thuc: detail.data.ten_hinh_thuc || '',
+                    ma_hinh_thuc: detail.data.ma_hinh_thuc || ''
+                })
+            } else {
+                setFormData({
+                    ten_hinh_thuc: row.ten_hinh_thuc || '',
+                    ma_hinh_thuc: row.ma_hinh_thuc || ''
+                })
+            }
+        } catch {
+            setFormData({
+                ten_hinh_thuc: row.ten_hinh_thuc || '',
+                ma_hinh_thuc: row.ma_hinh_thuc || ''
+            })
+        }
+        onOpenDrawerEdit()
+    }
+
+    const handleDelete = () => {
+        if (selectedCount === 0) return
+        const ids = Array.from(selectedKeys).map((id) => Number(id))
+        setDeletingId(ids.length === 1 ? ids[0] : ids)
         onOpenConfirm()
     }
 
     const onConfirmDelete = async () => {
         if (!deletingId) return
         try {
-            const response = await hinhthucAxios.delete(deletingId as string)
-            if (response.success) {
-                toast('Xóa hình thức thành công', { variant: 'success' })
+            const ids = Array.isArray(deletingId) ? deletingId : [deletingId]
+            const results = await Promise.all(
+                ids.map((id) => hinhthucAxios.delete(String(id)))
+            )
+            const failed = results.filter((r: any) => !r.success)
+            if (failed.length === 0) {
+                toast(`Xóa thành công ${ids.length} hình thức`, { variant: 'success' })
+                setSelectedKeys(new Set())
                 refetch()
             } else {
-                toast(response.message || 'Xóa thất bại', { variant: 'danger' })
+                const firstError = failed[0]?.message || 'Không xác định'
+                toast(`Xóa thất bại: ${firstError}`, { variant: 'danger' })
             }
-        } catch (error) {
-            toast('Có lỗi xảy ra', { variant: 'danger' })
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || error?.message || 'Lỗi không xác định từ server'
+            toast(`Xóa thất bại: ${msg}`, { variant: 'danger' })
         } finally {
             onCloseConfirm()
             setDeletingId(null)
@@ -140,7 +211,6 @@ export default function HinhThucPage() {
     const handleFinishEdit = () => {
         if (!editingCell) return
 
-        // Find original value to compare
         const currentRow = responseData?.data.find(
             (r: any) => r.id_hinh_thuc === editingCell.id
         )
@@ -158,22 +228,6 @@ export default function HinhThucPage() {
     const handleSaveEdit = async () => {
         if (!pendingEdit) return
         try {
-            // Inline edit not supported in backend controller explicitly yet but usually full update works if we just send changed field? 
-            // The controller Hinhthuc.php I wrote expects 'ten_hinh_thuc' required.
-            // So inline edit might fail if I only send one field. 
-            // I should update Hinhthuc.php to allow partial update OR fetch full object here and send it.
-            // But creating full edit for inline is safer.
-            // For now, let's disable inline editing or support it fully.
-            // Easiest is to disable inline edit logic or fetch full object.
-            // Actually, my update_post requires 'ten_hinh_thuc'. If I only update 'ma_hinh_thuc', it might fail validation.
-            // Let's rely on standard full edit via Drawer for now to be safe, or just implementing full fetch-merge-update.
-
-            // Let's just create drawer edit for now and disable inline edit specific logic if not needed, 
-            // but the UI has it. I'll just make sure update handles it.
-            // Wait, I didn't valid 'ma_hinh_thuc' as required. 'ten_hinh_thuc' is required.
-            // If I edit 'ma_hinh_thuc', I need to send 'ten_hinh_thuc' too.
-            // So inline edit needs to fetch the row content first.
-
             const currentRow = responseData?.data.find(
                 (r: any) => r.id_hinh_thuc === pendingEdit.id
             )
@@ -292,40 +346,6 @@ export default function HinhThucPage() {
                     )
                 }
             },
-            {
-                uid: 'actions',
-                name: 'Thao tác',
-                sortable: false,
-                width: 80,
-                pinned: 'right',
-                className: 'text-center',
-                render: (_, row: any) => (
-                    <div className="flex items-center justify-center gap-2">
-                        <Tooltip content="Chỉnh sửa">
-                            <button
-                                className="text-gray-500 hover:text-blue-600"
-                                onClick={async () => {
-                                    setEditingId(row.id_hinh_thuc)
-
-                                    const res = await hinhthucAxios.fetch({}, row.id_hinh_thuc)
-                                    setFormData({
-                                        ten_hinh_thuc: res.data.ten_hinh_thuc,
-                                        ma_hinh_thuc: res.data.ma_hinh_thuc,
-                                    })
-                                    onOpenDrawerEdit()
-                                }}
-                            >
-                                <Edit size={18} />
-                            </button>
-                        </Tooltip>
-                        {/* <Tooltip content="Xóa" color="danger">
-                            <button className="text-gray-500 hover:text-red-600" onClick={() => handleDelete(row.id_hinh_thuc)}>
-                                <Trash size={18} />
-                            </button>
-                        </Tooltip> */}
-                    </div>
-                )
-            }
         ]
     }, [editingCell, responseData])
 
@@ -344,51 +364,75 @@ export default function HinhThucPage() {
     const rows = useMemo(() => responseData?.data || [], [responseData])
 
     return (
-        <div className="flex flex-col gap-4 h-[calc(100vh-180px)]">
+        <div className="flex flex-col w-full h-full overflow-hidden relative bg-white">
             <DebugBox />
-            <div className="bg-slate-50">
-                <div className="p-3 flex flex-col md:flex-row items-center justify-between gap-2 bg-white border border-gray-100 shadow-sm">
-                    <div className="flex items-center gap-2 w-full md:w-auto flex-1">
-                        <Input
-                            type="search"
-                            placeholder="Tìm kiếm hình thức..."
-                            startContent={<Search className="text-gray-500" size={18} />}
-                            value={typingValue}
-                            onValueChange={setTypingValue}
-                            className="w-full md:max-w-[400px]"
-                            classNames={{ inputWrapper: 'h-10 bg-white border border-gray-200 rounded-md' }}
-                            endContent={isFetching && <Spinner size="sm" />}
-                        />
+            
+            <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 bg-white border-b border-gray-100">
+                <div className="flex items-center gap-2 w-full md:w-auto flex-1">
+                    <Input
+                        type="search"
+                        placeholder="Tìm kiếm hình thức..."
+                        startContent={<Search className="text-gray-500" size={18} />}
+                        value={typingValue}
+                        onValueChange={setTypingValue}
+                        className="w-full md:max-w-[300px]"
+                        classNames={{ inputWrapper: 'h-8 bg-white border border-gray-200 rounded-lg' }}
+                        endContent={isFetching && <Spinner size="sm" />}
+                    />
+                </div>
 
-                        <TableColumnVisibility
-                            columns={allColumns}
-                            visibleColumns={new Set(filters.initial_visible_columns)}
-                            setVisibleColumns={(keys) =>
-                                setFilters({ initial_visible_columns: Array.from(keys) as string[] })
-                            }
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <Tooltip content="Tải lại dữ liệu">
-                            <Button isIconOnly variant="light" onClick={handleResetTable} isLoading={isResetting}>
-                                <RotateCcw size={18} className="text-gray-600" />
-                            </Button>
-                        </Tooltip>
-                        <Divider orientation="vertical" className="h-6" />
+                <div className="flex items-center gap-1.5">
+                    {canCopy && (
                         <Button
-                            color="primary"
-                            startContent={<Plus size={18} />}
-                            className="font-medium"
-                            onPress={() => onOpenDrawerAdd()}
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 font-medium"
+                            onPress={handleCopyRows}
                         >
-                            Thêm mới
+                            Sao chép
                         </Button>
-                    </div>
+                    )}
+                    {canEdit && (
+                        <Button
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 font-medium"
+                            onPress={handleOpenEdit}
+                        >
+                            Sửa
+                        </Button>
+                    )}
+                    {canDelete && (
+                        <Button
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 font-medium"
+                            onPress={handleDelete}
+                        >
+                            Xóa
+                        </Button>
+                    )}
+                    {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+                    <Button
+                        color="primary"
+                        size="sm"
+                        startContent={<Plus size={18} />}
+                        className="font-medium"
+                        onPress={() => onOpenDrawerAdd()}
+                    >
+                        Thêm mới
+                    </Button>
+                        <TableColumnVisibility
+                        columns={allColumns}
+                        visibleColumns={new Set(filters.initial_visible_columns)}
+                        setVisibleColumns={(keys) =>
+                            setFilters({ initial_visible_columns: Array.from(keys) as string[] })
+                        }
+                    />
                 </div>
             </div>
 
-            <div className="flex-1 overflow-hidden relative rounded-md border border-gray-200 bg-white">
+            <div className="flex-1 overflow-hidden relative bg-white min-h-0">
                 <TableHr
                     data={rows}
                     columns={visibleColumns}
@@ -398,6 +442,10 @@ export default function HinhThucPage() {
                     columnWidths={columnWidths}
                     onColumnResize={setColumnWidth}
                     onPinColumn={setPinnedColumn}
+                    selectedKeys={selectedKeys}
+                    onSelectionChange={setSelectedKeys}
+                    selectionMode="multiple"
+                    primaryKey="id_hinh_thuc"
                 />
 
                 <DrawerCommon
@@ -449,7 +497,11 @@ export default function HinhThucPage() {
                 onClose={onCloseConfirm}
                 onConfirm={onConfirmDelete}
                 title="Xác nhận xóa"
-                content="Bạn có chắc chắn muốn xóa hình thức này không? Hành động này không thể hoàn tác."
+                content={
+                    Array.isArray(deletingId)
+                        ? `Bạn có chắc chắn muốn xóa ${deletingId.length} hình thức đã chọn không? Hành động này không thể hoàn tác.`
+                        : 'Bạn có chắc chắn muốn xóa hình thức này không? Hành động này không thể hoàn tác.'
+                }
                 isDanger={true}
             />
             <ConfirmModal

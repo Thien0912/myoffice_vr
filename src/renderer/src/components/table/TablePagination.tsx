@@ -61,6 +61,7 @@ export function TablePaginationControl({
 }: TablePaginationControlProps) {
   const totalPages = Math.ceil(total / limit) || 1
   const [isMobile, setIsMobile] = useState(false)
+  const [jumpValue, setJumpValue] = useState('')
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640)
@@ -114,10 +115,31 @@ export function TablePaginationControl({
     return []
   }
 
+  const handleJump = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const targetPage = Number(jumpValue)
+      if (!isNaN(targetPage) && targetPage >= 1 && targetPage <= totalPages) {
+        onChangePage(targetPage)
+      }
+      setJumpValue('')
+    }
+  }
+
   return (
-    <div className={className}>
+    <div className={`flex items-center gap-2 ${className}`}>
       <Pagination size="sm" className="gap-1">
         <Pagination.Content className="gap-0.5">
+          {/* First page */}
+          <Pagination.Item>
+            <button
+              disabled={page === 1}
+              onClick={() => onChangePage(1)}
+              className="min-w-8 sm:min-w-10 h-8 px-2 sm:px-3 rounded-md bg-transparent dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {'<<'}
+            </button>
+          </Pagination.Item>
+
           <Pagination.Item>
             <Pagination.Previous
               isDisabled={page === 1}
@@ -159,8 +181,34 @@ export function TablePaginationControl({
               <Pagination.NextIcon />
             </Pagination.Next>
           </Pagination.Item>
+
+          {/* Last page */}
+          <Pagination.Item>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => onChangePage(totalPages)}
+              className="min-w-8 sm:min-w-10 h-8 px-2 sm:px-3 rounded-md bg-transparent dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {'>>'}
+            </button>
+          </Pagination.Item>
         </Pagination.Content>
       </Pagination>
+
+      {/* Jump to page input */}
+      <div className="flex items-center gap-1 ml-1">
+        <span className="text-xs text-gray-400 hidden sm:inline">Đến trang</span>
+        <input
+          type="number"
+          min={1}
+          max={totalPages}
+          value={jumpValue}
+          onChange={(e) => setJumpValue(e.target.value)}
+          onKeyDown={handleJump}
+          placeholder="#"
+          className="w-12 h-8 text-center text-sm border border-gray-200 rounded-md outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+        />
+      </div>
     </div>
   )
 }
@@ -279,20 +327,21 @@ export default function TablePagination({
           }`}
         style={enableStickyPagination ? { left: fixedStyle.left, width: fixedStyle.width } : undefined}
       >
-        <TablePaginationControl
-          page={page}
-          total={displayFiltered !== undefined ? displayFiltered : displayTotal}
-          limit={limit}
-          onChangePage={onChangePage}
-          className="flex justify-start sm:justify-end order-1"
-        />
         <TableLimitSelector
           limit={limit}
           total={displayTotal}
           filtered={displayFiltered}
           onChangeLimit={onChangeLimit}
-          className="justify-end sm:justify-start order-2"
+          className="justify-end sm:justify-start order-1"
         />
+        <TablePaginationControl
+          page={page}
+          total={displayFiltered !== undefined ? displayFiltered : displayTotal}
+          limit={limit}
+          onChangePage={onChangePage}
+          className="flex justify-start sm:justify-end order-2"
+        />
+        
       </div>
     </>
   )

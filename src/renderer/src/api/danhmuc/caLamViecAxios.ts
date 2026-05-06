@@ -19,11 +19,11 @@ export const caLamViecAxios = {
       data: payload
     })
   },
-  // delete: (id: string | number) => {
-  //   return callApi(`admin/hrm/calamviec/${id}`, {
-  //     method: 'DELETE'
-  //   })
-  // }
+  delete: (id: string | number) => {
+    return callApi(`admin/hrm/calamviec/xoa_ca?id=${id}`, {
+      method: 'POST'
+    })
+  }
 }
 
 export const mapCaLamViecOptions = async () => {

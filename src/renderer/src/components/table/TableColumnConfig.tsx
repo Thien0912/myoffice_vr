@@ -70,7 +70,7 @@ export function SortableColumnItem({
         size="sm"
         isSelected={isVisible}
         onValueChange={onToggle}
-        classNames={{ label: 'text-[13px] font-medium select-none' }}
+        classNames={{ label: 'text-[13px] font-medium select-none', wrapper: 'before:!border-black' }}
       >
         {name}
       </Checkbox>

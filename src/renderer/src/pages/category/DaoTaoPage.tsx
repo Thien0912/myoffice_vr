@@ -1,10 +1,10 @@
-﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider, Chip } from '@heroui/react'
+﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
 import { daotaoAxios } from '@renderer/api/danhmuc/daotaoAxios'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Edit, Plus, RotateCcw, Search, Trash } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
@@ -33,6 +33,7 @@ export default function DaoTaoPage() {
     const [isResetting, setIsResetting] = useState(false)
     const [typingValue, setTypingValue] = useState(filters.searchValue)
     const [formData, setFormData] = useState<Record<string, any>>({})
+    const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
 
     // Confirm Modal State
     const [deletingId, setDeletingId] = useState<(string | number) | (string | number)[] | null>(null)
@@ -92,29 +93,111 @@ export default function DaoTaoPage() {
     const handleResetTable = () => {
         setIsResetting(true)
         setTypingValue('')
+        setSelectedKeys(new Set())
         reset()
         setTimeout(() => {
             setIsResetting(false)
         }, 500)
     }
 
-    const handleDelete = (id: string | number) => {
-        setDeletingId(id)
+    const selectedRows = useMemo(() => {
+        if (!responseData?.data) return []
+        return responseData.data.filter((row: any) => selectedKeys.has(String(row.id_dao_tao)))
+    }, [responseData, selectedKeys])
+
+    const selectedCount = selectedKeys.size
+    const canCopy = selectedCount > 0
+    const canEdit = selectedCount === 1
+    const canDelete = selectedCount > 0
+
+    const handleCopyRows = async () => {
+        if (selectedRows.length === 0) return
+        try {
+            const promises = selectedRows.map((row: any) => {
+                const payload = {
+                    ten_khoa_hoc: row.ten_khoa_hoc + ' (Copy)',
+                    noi_dung: row.noi_dung,
+                    ngay_bat_dau: row.ngay_bat_dau,
+                    ngay_ket_thuc: row.ngay_ket_thuc,
+                    trang_thai: row.trang_thai,
+                }
+                return daotaoAxios.create(payload)
+            })
+            const results = await Promise.all(promises)
+            const allSuccess = results.every((r: any) => r.success)
+            if (allSuccess) {
+                toast(`Sao chép thành công ${selectedRows.length} khóa đào tạo`, { variant: 'success' })
+                setSelectedKeys(new Set())
+                refetch()
+            } else {
+                toast('Một số khóa đào tạo sao chép thất bại', { variant: 'danger' })
+            }
+        } catch (error) {
+            toast('Có lỗi xảy ra khi sao chép', { variant: 'danger' })
+        }
+    }
+
+    const handleOpenEdit = async () => {
+        if (selectedRows.length !== 1) return
+        const row = selectedRows[0]
+        setEditingId(row.id_dao_tao)
+        try {
+            const detail = await daotaoAxios.show(row.id_dao_tao)
+            if (detail.success && detail.data) {
+                setFormData({
+                    ten_khoa_hoc: detail.data.ten_khoa_hoc || '',
+                    noi_dung: detail.data.noi_dung || '',
+                    ngay_bat_dau: detail.data.ngay_bat_dau || '',
+                    ngay_ket_thuc: detail.data.ngay_ket_thuc || '',
+                    trang_thai: detail.data.trang_thai || 'Dang_dien_ra'
+                })
+            } else {
+                setFormData({
+                    ten_khoa_hoc: row.ten_khoa_hoc || '',
+                    noi_dung: row.noi_dung || '',
+                    ngay_bat_dau: row.ngay_bat_dau || '',
+                    ngay_ket_thuc: row.ngay_ket_thuc || '',
+                    trang_thai: row.trang_thai || 'Dang_dien_ra'
+                })
+            }
+        } catch {
+            setFormData({
+                ten_khoa_hoc: row.ten_khoa_hoc || '',
+                noi_dung: row.noi_dung || '',
+                ngay_bat_dau: row.ngay_bat_dau || '',
+                ngay_ket_thuc: row.ngay_ket_thuc || '',
+                trang_thai: row.trang_thai || 'Dang_dien_ra'
+            })
+        }
+        onOpenDrawerEdit()
+    }
+
+    const handleDelete = () => {
+        if (selectedCount === 0) return
+        const ids = Array.from(selectedKeys).map((id) => Number(id))
+        setDeletingId(ids.length === 1 ? ids[0] : ids)
         onOpenConfirm()
     }
 
     const onConfirmDelete = async () => {
         if (!deletingId) return
         try {
-            const response = await daotaoAxios.delete(deletingId as string)
-            if (response.success) {
-                toast('Xóa khóa đào tạo thành công', { variant: 'success' })
+            const ids = Array.isArray(deletingId) ? deletingId : [deletingId]
+            const results = await Promise.all(
+                ids.map((id) => daotaoAxios.delete(String(id)))
+            )
+            const failed = results.filter((r: any) => !r.success)
+            if (failed.length === 0) {
+                toast(`Xóa thành công ${ids.length} khóa đào tạo`, { variant: 'success' })
+                setSelectedKeys(new Set())
                 refetch()
             } else {
-                toast(response.message || 'Xóa thất bại', { variant: 'danger' })
+                const firstError = failed[0]?.message || 'Không xác định'
+                toast(`Xóa thất bại: ${firstError}`, { variant: 'danger' })
             }
-        } catch (error) {
-            toast('Có lỗi xảy ra', { variant: 'danger' })
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || error?.message || 'Lỗi không xác định từ server'
+            toast(`Xóa thất bại: ${msg}`, { variant: 'danger' })
         } finally {
             onCloseConfirm()
             setDeletingId(null)
@@ -186,42 +269,7 @@ export default function DaoTaoPage() {
                     )
                 }
             },
-            {
-                uid: 'actions',
-                name: 'Thao tác',
-                sortable: false,
-                width: 80,
-                pinned: 'right',
-                className: 'text-center',
-                render: (_, row: any) => (
-                    <div className="flex items-center justify-center gap-2">
-                        <Tooltip content="Chỉnh sửa">
-                            <button
-                                className="text-gray-500 hover:text-blue-600"
-                                onClick={async () => {
-                                    setEditingId(row.id_dao_tao)
-                                    setFormData({
-                                        ten_khoa_hoc: row.ten_khoa_hoc,
-                                        noi_dung: row.noi_dung,
-                                        ngay_bat_dau: row.ngay_bat_dau,
-                                        ngay_ket_thuc: row.ngay_ket_thuc,
-                                        trang_thai: row.trang_thai,
-                                    })
-                                    onOpenDrawerEdit()
-                                }}
-                            >
-                                <Edit size={18} />
-                            </button>
-                        </Tooltip>
-                        {/* <Tooltip content="Xóa" color="danger">
-                            <button className="text-gray-500 hover:text-red-600" onClick={() => handleDelete(row.id_dao_tao)}>
-                                <Trash size={18} />
-                            </button>
-                        </Tooltip> */}
-                    </div>
-                )
-            }
-        ]
+            ]
     }, [responseData, filters.page, filters.length])
 
     const columnsWithSettings = useMemo(() => {
@@ -239,10 +287,10 @@ export default function DaoTaoPage() {
     const rows = useMemo(() => responseData?.data || [], [responseData])
 
     return (
-        <div className="flex flex-col gap-4 h-[calc(100vh-180px)]">
+        <div className="flex flex-col w-full h-full overflow-hidden relative bg-white">
             <DebugBox />
-            <div className="bg-slate-50">
-                <div className="p-3 flex flex-col md:flex-row items-center justify-between gap-2 bg-white border border-gray-100 shadow-sm">
+            
+            <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 bg-white border-b border-gray-100">
                     <div className="flex items-center gap-2 w-full md:w-auto flex-1">
                         <Input
                             type="search"
@@ -250,29 +298,48 @@ export default function DaoTaoPage() {
                             startContent={<Search className="text-gray-500" size={18} />}
                             value={typingValue}
                             onValueChange={setTypingValue}
-                            className="w-full md:max-w-[400px]"
-                            classNames={{ inputWrapper: 'h-10 bg-white border border-gray-200 rounded-md' }}
+                            className="w-full md:max-w-[300px]"
+                            classNames={{ inputWrapper: 'h-8 bg-white border border-gray-200 rounded-lg' }}
                             endContent={isFetching && <Spinner size="sm" />}
                         />
 
-                        <TableColumnVisibility
-                            columns={allColumns}
-                            visibleColumns={new Set(filters.initial_visible_columns)}
-                            setVisibleColumns={(keys) =>
-                                setFilters({ initial_visible_columns: Array.from(keys) as string[] })
-                            }
-                        />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Tooltip content="Tải lại dữ liệu">
-                            <Button isIconOnly variant="light" onClick={handleResetTable} isLoading={isResetting}>
-                                <RotateCcw size={18} className="text-gray-600" />
+                    <div className="flex items-center gap-1.5">
+                        {canCopy && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleCopyRows}
+                            >
+                                Sao chép
                             </Button>
-                        </Tooltip>
-                        <Divider orientation="vertical" className="h-6" />
+                        )}
+                        {canEdit && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleOpenEdit}
+                            >
+                                Sửa
+                            </Button>
+                        )}
+                        {canDelete && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleDelete}
+                            >
+                                Xóa
+                            </Button>
+                        )}
+                        {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
                         <Button
                             color="primary"
+                            size="sm"
                             startContent={<Plus size={18} />}
                             className="font-medium"
                             onPress={() => {
@@ -282,11 +349,17 @@ export default function DaoTaoPage() {
                         >
                             Thêm mới
                         </Button>
+                        <TableColumnVisibility
+                            columns={allColumns}
+                            visibleColumns={new Set(filters.initial_visible_columns)}
+                            setVisibleColumns={(keys) =>
+                                setFilters({ initial_visible_columns: Array.from(keys) as string[] })
+                            }
+                        />
                     </div>
                 </div>
-            </div>
 
-            <div className="flex-1 overflow-hidden relative rounded-md border border-gray-200 bg-white">
+            <div className="flex-1 overflow-hidden relative bg-white min-h-0">
                 <TableHr
                     data={rows}
                     columns={visibleColumns}
@@ -296,6 +369,10 @@ export default function DaoTaoPage() {
                     columnWidths={columnWidths}
                     onColumnResize={setColumnWidth}
                     onPinColumn={setPinnedColumn}
+                    selectedKeys={selectedKeys}
+                    onSelectionChange={setSelectedKeys}
+                    selectionMode="multiple"
+                    primaryKey="id_dao_tao"
                 />
 
                 <DrawerCommon
@@ -347,7 +424,11 @@ export default function DaoTaoPage() {
                 onClose={onCloseConfirm}
                 onConfirm={onConfirmDelete}
                 title="Xác nhận xóa"
-                content="Bạn có chắc chắn muốn xóa khóa đào tạo này không? Hành động này không thể hoàn tác."
+                content={
+                    Array.isArray(deletingId)
+                        ? `Bạn có chắc chắn muốn xóa ${deletingId.length} khóa đào tạo đã chọn không? Hành động này không thể hoàn tác.`
+                        : 'Bạn có chắc chắn muốn xóa khóa đào tạo này không? Hành động này không thể hoàn tác.'
+                }
                 isDanger={true}
             />
         </div>

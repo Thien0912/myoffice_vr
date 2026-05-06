@@ -1,5 +1,5 @@
 import { ScrollShadow } from '@heroui-v3/react'
-import { Skeleton } from '@heroui/react'
+import { Skeleton, cn } from '@heroui/react'
 import { userAxios } from '@renderer/api/auth/userAxios'
 import BackToTop from '@renderer/components/BackToTop'
 import GlobalCompose from '@renderer/components/GlobalCompose'
@@ -31,7 +31,7 @@ export default function MainLayout(): React.JSX.Element {
     const lastLabel = breadcrumb[breadcrumb.length - 1]?.label || 'MyOffice VR'
     const descriptionLabel = breadcrumb[breadcrumb.length - 1]?.description || ''
 
-    // Sự kiện người dùng đang scroll trang
+    // Sự kiện ngườii dùng đang scroll trang
     useEffect(() => {
         const el = OutletScroll.current
         if (!el) return
@@ -82,6 +82,7 @@ export default function MainLayout(): React.JSX.Element {
     // Check current route config for layout mode
     const currentRoute = findRouteByPath(pathname)
     const isFullscreen = currentRoute?.layout === 'fullscreen'
+    const isDanhMucPage = pathname.includes('danh-muc')
 
     if (isFullscreen) {
         return (
@@ -104,14 +105,22 @@ export default function MainLayout(): React.JSX.Element {
             )}
             <div className="flex-1 flex flex-col gap-0 min-w-0 h-full w-full transition-all duration-300">
                 <Header toggleSidebar={toggleSidebar} />
-                <ScrollShadow className="flex-1 lg:rounded-tl-3xl bg-white">
-                    <div className="space-y-0">
-                        <div className='flex items-center justify-between pr-6'>
+                <ScrollShadow
+                    ref={OutletScroll}
+                    className={cn(
+                        'flex-1 lg:rounded-tl-3xl bg-white',
+                        isDanhMucPage && 'flex flex-col overflow-hidden'
+                    )}
+                >
+                    <div className={cn('space-y-0', isDanhMucPage && 'flex flex-col h-full')}>
+                        <div className={cn('flex items-center justify-between pr-6', isDanhMucPage && 'shrink-0')}>
                             {!currentRoute?.hideTitle && <PageTitle />}
                             {pageActions && <div className="shrink-0">{pageActions}</div>}
                         </div>
                         <Suspense fallback={<Skeleton />}>
-                            <Outlet />
+                            <div className={cn(isDanhMucPage && 'flex-1 min-h-0 overflow-hidden')}>
+                                <Outlet />
+                            </div>
                         </Suspense>
                     </div>
                 </ScrollShadow>

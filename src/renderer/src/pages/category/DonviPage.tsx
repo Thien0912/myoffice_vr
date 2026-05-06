@@ -4,16 +4,16 @@ import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Edit, Plus, RotateCcw, Search, Trash, Mail } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useDonviStore } from '@renderer/store/useDonviStore'
+import { useAuthStore } from '@renderer/store/useAuthStore'
 import { DrawerCommon } from '@renderer/components/DrawerCommon'
 import { SelectDropdown } from '@renderer/components/SelectDropdown'
 import FormDonvi from './components/FormDonvi'
-import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
 
 export default function DonviPage() {
@@ -29,11 +29,16 @@ export default function DonviPage() {
     reset
   } = useDonviStore()
 
+  const { user } = useAuthStore()
+  const permissions = user?.permissions || []
+  const isAdmin = permissions.includes('IS_ADMIN')
+
   const [recordsTotal, setRecordsTotal] = useState(0)
   const [recordsFiltered, setRecordsFiltered] = useState(0)
   const [isResetting, setIsResetting] = useState(false)
   const [typingValue, setTypingValue] = useState(filters.searchValue)
   const [formData, setFormData] = useState<Record<string, object>>({})
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
 
   // Confirm Modal State
   const [deletingId, setDeletingId] = useState<(string | number) | (string | number)[] | null>(null)
@@ -112,29 +117,112 @@ export default function DonviPage() {
   const handleResetTable = () => {
     setIsResetting(true)
     setTypingValue('')
+    setSelectedKeys(new Set())
     reset()
     setTimeout(() => {
       setIsResetting(false)
     }, 500)
   }
 
-  const handleDelete = (id: string | number) => {
-    setDeletingId(id)
+  const selectedRows = useMemo(() => {
+    if (!responseData?.data) return []
+    return responseData.data.filter((row: any) => selectedKeys.has(String(row.id_don_vi)))
+  }, [responseData, selectedKeys])
+
+  const selectedCount = selectedKeys.size
+  const canCopy = selectedCount > 0
+  const canEdit = selectedCount === 1
+  const canDelete = selectedCount > 0
+  const canCreate = isAdmin || permissions.includes('donvi.create')
+
+  const handleCopyRows = async () => {
+    if (selectedRows.length === 0) return
+    try {
+      const promises = selectedRows.map((row: any) => {
+        const payload = {
+          ten_don_vi: row.ten_don_vi + ' (Copy)',
+          ten_viet_tat: row.ten_viet_tat,
+          loai: row.loai,
+          email: row.email,
+          nguoi_co_quyen_van_thu: row.nguoi_co_quyen_van_thu,
+        }
+        return DonviAxios.create(payload)
+      })
+      const results = await Promise.all(promises)
+      const allSuccess = results.every((r: any) => r.success)
+      if (allSuccess) {
+        toast(`Sao chép thành công ${selectedRows.length} đơn vị`, { variant: 'success' })
+        setSelectedKeys(new Set())
+        refetch()
+      } else {
+        toast('Một số đơn vị sao chép thất bại', { variant: 'danger' })
+      }
+    } catch (error) {
+      toast('Có lỗi xảy ra khi sao chép', { variant: 'danger' })
+    }
+  }
+
+  const handleOpenEdit = async () => {
+    if (selectedRows.length !== 1) return
+    const row = selectedRows[0]
+    setEditingId(row.id_don_vi)
+    try {
+            const detail = await DonviAxios.show(row.id_don_vi)
+      if (detail.success && detail.data) {
+        setFormData({
+          ten_don_vi: detail.data.ten_don_vi || '',
+          ten_viet_tat: detail.data.ten_viet_tat || '',
+          loai: detail.data.loai || '',
+          email: detail.data.email || '',
+          nguoi_co_quyen_van_thu: detail.data.nguoi_co_quyen_van_thu || []
+        })
+      } else {
+        setFormData({
+          ten_don_vi: row.ten_don_vi || '',
+          ten_viet_tat: row.ten_viet_tat || '',
+          loai: row.loai || '',
+          email: row.email || '',
+          nguoi_co_quyen_van_thu: row.nguoi_co_quyen_van_thu || []
+        })
+      }
+    } catch {
+      setFormData({
+        ten_don_vi: row.ten_don_vi || '',
+        ten_viet_tat: row.ten_viet_tat || '',
+        loai: row.loai || '',
+        email: row.email || '',
+        nguoi_co_quyen_van_thu: row.nguoi_co_quyen_van_thu || []
+      })
+    }
+    onOpenDrawerEdit()
+  }
+
+  const handleDelete = () => {
+    if (selectedCount === 0) return
+    const ids = Array.from(selectedKeys).map((id) => Number(id))
+    setDeletingId(ids.length === 1 ? ids[0] : ids)
     onOpenConfirm()
   }
 
   const onConfirmDelete = async () => {
     if (!deletingId) return
     try {
-      const response = await DonviAxios.delete(deletingId as string) // Adjust if API accepts array
-      if (response.success) {
-        toast('Xóa đơn vị thành công', { variant: 'success' })
+      const ids = Array.isArray(deletingId) ? deletingId : [deletingId]
+      const results = await Promise.all(
+        ids.map((id) => DonviAxios.delete(String(id)))
+      )
+      const failed = results.filter((r: any) => !r.success)
+      if (failed.length === 0) {
+        toast(`Xóa thành công ${ids.length} đơn vị`, { variant: 'success' })
+        setSelectedKeys(new Set())
         refetch()
       } else {
-        toast(response.message || 'Xóa thất bại', { variant: 'danger' })
+        const firstError = failed[0]?.message || 'Không xác định'
+        toast(`Xóa thất bại: ${firstError}`, { variant: 'danger' })
       }
-    } catch (error) {
-      toast('Có lỗi xảy ra', { variant: 'danger' })
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Lỗi không xác định từ server'
+      toast(`Xóa thất bại: ${msg}`, { variant: 'danger' })
     } finally {
       onCloseConfirm()
       setDeletingId(null)
@@ -463,47 +551,7 @@ export default function DonviPage() {
           )
         }
       },
-      {
-        uid: 'actions',
-        name: 'Thao tác',
-        sortable: false,
-        width: 80,
-        pinned: 'right',
-        className: 'text-center',
-        render: (_, row: any) => (
-          <div className="flex items-center justify-center gap-2">
-            <Tooltip content="Chỉnh sửa">
-              <button
-                className="text-gray-500 hover:text-blue-600"
-                onClick={async () => {
-                  setEditingId(row.id_don_vi)
-
-                  const donviSeleted = await DonviAxios.show(row.id_don_vi)
-                  setFormData({
-                    ten_don_vi: donviSeleted.data.ten_don_vi,
-                    ten_viet_tat: donviSeleted.data.ten_viet_tat,
-                    ma_don_vi: donviSeleted.data.ma_don_vi,
-                    loai: donviSeleted.data.loai,
-                    email: donviSeleted.data.email,
-                    nguoi_co_quyen_van_thu: donviSeleted.data.nguoi_co_quyen_van_thu,
-                    lanh_dao_don_vi: donviSeleted.data.lanh_dao_don_vi,
-                    nhan_su: donviSeleted.data.nhan_su
-                  })
-                  onOpenDrawerEdit()
-                }}
-              >
-                <Edit size={18} />
-              </button>
-            </Tooltip>
-            {/* <Tooltip content="Xóa" color="danger">
-                            <button className="text-gray-500 hover:text-red-600" onClick={() => handleDelete(row.id_don_vi)}>
-                                <Trash size={18} />
-                            </button>
-                        </Tooltip> */}
-          </div>
-        )
-      }
-    ]
+      ]
   }, [editingCell, responseData])
 
   const columnsWithSettings = useMemo(() => {
@@ -521,10 +569,10 @@ export default function DonviPage() {
   const rows = useMemo(() => responseData?.data || [], [responseData])
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100vh-180px)]">
+    <div className="flex flex-col w-full h-full overflow-hidden relative bg-white">
       <DebugBox />
-      <div className="bg-slate-50">
-        <div className="p-3 flex flex-col md:flex-row items-center justify-between gap-2 bg-white border border-gray-100 shadow-sm">
+      
+      <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 bg-white border-b border-gray-100">
           <div className="flex items-center gap-2 w-full md:w-auto flex-1">
             <Input
               type="search"
@@ -532,8 +580,8 @@ export default function DonviPage() {
               startContent={<Search className="text-gray-500" size={18} />}
               value={typingValue}
               onValueChange={setTypingValue}
-              className="w-full md:max-w-[400px]"
-              classNames={{ inputWrapper: 'h-10 bg-white border border-gray-200 rounded-md' }}
+              className="w-full md:max-w-[300px]"
+              classNames={{ inputWrapper: 'h-8 bg-white border border-gray-200 rounded-lg' }}
               endContent={isFetching && <Spinner size="sm" />}
             />
             <SelectDropdown
@@ -549,6 +597,51 @@ export default function DonviPage() {
               onChange={(val) => setFilters({ selectedClassify: val as string, page: 1 })}
               className="w-full md:max-w-[200px]"
             />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {canCopy && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleCopyRows}
+              >
+                Sao chép
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleOpenEdit}
+              >
+                Sửa
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleDelete}
+              >
+                Xóa
+              </Button>
+            )}
+            {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+            {canCreate && (
+              <Button
+                color="primary"
+                size="sm"
+                startContent={<Plus size={18} />}
+                className="font-medium"
+                onPress={() => onOpenDrawerAdd()}
+              >
+                Thêm mới
+              </Button>
+            )}
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -557,34 +650,22 @@ export default function DonviPage() {
               }
             />
           </div>
-
-          <div className="flex items-center gap-2">
-            <Tooltip content="Tải lại dữ liệu">
-              <Button isIconOnly variant="light" onClick={handleResetTable} isLoading={isResetting}>
-                <RotateCcw size={18} className="text-gray-600" />
-              </Button>
-            </Tooltip>
-            <Divider orientation="vertical" className="h-6" />
-            <HrPrimaryButton
-              onPress={() => onOpenDrawerAdd()}
-            >
-              Thêm đơn vị
-            </HrPrimaryButton>
-          </div>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-hidden relative rounded-md border border-gray-200 bg-white">
-        <TableHr
+            <div className="flex-1 overflow-hidden relative bg-white min-h-0">
+                <TableHr
           data={rows}
           columns={visibleColumns}
           isLoading={isLoading}
-          // onRowClick={}
           sortDescriptors={sortDescriptors}
           onSortChange={setSortDescriptors}
           columnWidths={columnWidths}
           onColumnResize={setColumnWidth}
           onPinColumn={setPinnedColumn}
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
+          selectionMode="multiple"
+          primaryKey="id_don_vi"
         />
 
         <DrawerCommon
@@ -599,7 +680,6 @@ export default function DonviPage() {
           onSubmitSuccess={() => {
             refetch()
             setFormData({})
-            // onCloseDrawerAdd()
           }}
         >
           <FormDonvi formData={formData} setFormData={setFormData} isEdit={false} />
@@ -624,20 +704,24 @@ export default function DonviPage() {
       </div>
 
       <TablePagination
-        page={filters.page}
-        total={recordsTotal}
-        filtered={recordsFiltered}
-        limit={filters.length}
-        onChangePage={(page) => setFilters({ page })}
-        onChangeLimit={(length) => setFilters({ length, page: 1 })}
-      />
+          page={filters.page}
+          total={recordsTotal}
+          filtered={recordsFiltered}
+          limit={filters.length}
+          onChangePage={(page) => setFilters({ page })}
+          onChangeLimit={(length) => setFilters({ length, page: 1 })}
+        />
 
       <ConfirmModal
         isOpen={isOpenConfirm}
         onClose={onCloseConfirm}
         onConfirm={onConfirmDelete}
         title="Xác nhận xóa"
-        content="Bạn có chắc chắn muốn xóa đơn vị này không? Hành động này không thể hoàn tác."
+        content={
+          Array.isArray(deletingId)
+            ? `Bạn có chắc chắn muốn xóa ${deletingId.length} đơn vị đã chọn không? Hành động này không thể hoàn tác.`
+            : 'Bạn có chắc chắn muốn xóa đơn vị này không? Hành động này không thể hoàn tác.'
+        }
         isDanger={true}
       />
       <ConfirmModal

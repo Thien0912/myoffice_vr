@@ -24,8 +24,7 @@ interface HinhThucStore {
 const DEFAULT_VISIBLE_COLUMNS = [
     'stt',
     'ten_hinh_thuc',
-    'ma_hinh_thuc',
-    'actions'
+    'ma_hinh_thuc'
 ]
 
 export const useHinhThucStore = create<HinhThucStore>()(
