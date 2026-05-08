@@ -333,19 +333,28 @@ export const ROUTES = [
                 title: 'Danh mục',
                 abbre: 'Danh mục',
                 module: 'danhmuc',
-                description: 'Quản lý các mục dùng chung trong hệ thống',
+                description: 'Quản lý các mục đơn vị',
                 path: undefined,
                 icon: AlignStartVertical,
                 Component: null,
                 permission: undefined,
                 children: [
                     {
-                        title: 'Danh mục',
-                        description: 'Quản lý các mục dùng chung trong hệ thống',
+                        title: 'Đơn vị',
+                        description: 'Quản lý các danh mục đơn vị',
                         path: 'hrm/danh-muc',
                         hide: false,
                         permission: ['danhmuc', 'donvi', 'loaivanban', 'chucvu'],
                         Component: lazy(() => import('@renderer/pages/category/DanhmucPage')),
+                        children: []
+                    },
+                    {
+                        title: 'Hệ thống',
+                        description: 'Quản lý các danh mục hệ thống',
+                        path: 'hrm/danh-muc-he-thong',
+                        hide: false,
+                        permission: ['danhmuc', 'loaivanban', 'hinhthuc', 'tinhchat', 'baomat', 'coquan', 'chucvu', 'calamviec', 'daotao'],
+                        Component: lazy(() => import('@renderer/pages/category/DanhMucHeThong')),
                         children: []
                     },
                     {

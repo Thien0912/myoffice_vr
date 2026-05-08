@@ -422,7 +422,7 @@ export default function TinhChatPage() {
                             color="primary"
                             size="sm"
                             startContent={<Plus size={18} />}
-                            className="font-medium"
+                            className="font-medium rounded-md px-4"
                             onPress={() => onOpenDrawerAdd()}
                         >
                             Thêm mới

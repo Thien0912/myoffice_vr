@@ -15,8 +15,13 @@ import { DrawerCommon } from '@renderer/components/DrawerCommon'
 import { SelectDropdown } from '@renderer/components/SelectDropdown'
 import FormDonvi from './components/FormDonvi'
 import { toast } from "@heroui-v3/react";
+import { LOAI_DON_VI_DANH_MUC } from '@renderer/api/danhmuc/DonviAxios'
 
-export default function DonviPage() {
+interface DonviPageProps {
+    loaiDonVi?: string
+}
+
+export default function DonviPage({ loaiDonVi }: DonviPageProps) {
   const {
     filters,
     setFilters,
@@ -81,9 +86,9 @@ export default function DonviPage() {
     refetch,
     isFetching
   } = useQuery({
-    queryKey: ['donviData', filters, sortDescriptors],
+    queryKey: ['donviData', filters, sortDescriptors, loaiDonVi],
     queryFn: async () => {
-      const payload = {
+      const payload: any = {
         searchValue: filters.searchValue,
         start: (filters.page - 1) * filters.length,
         length: filters.length,
@@ -91,8 +96,9 @@ export default function DonviPage() {
           column: desc.column,
           dir: desc.direction === 'ascending' ? 'asc' : 'desc'
         })),
-        searchKey: JSON.stringify({ selectedClassify: filters.selectedClassify })
-        // Add other filter mappings if API supports them
+        searchKey: JSON.stringify({
+          selectedClassify: loaiDonVi || filters.selectedClassify
+        })
       }
       const response = await DonviAxios.fetch(payload)
       return response
@@ -299,7 +305,18 @@ export default function DonviPage() {
     BAN: 'Ban',
     VIEN: 'Viện',
     TRUNG_TAM: 'Trung tâm',
-    DON_VI_KHAC: 'Đơn vị khác'
+    DON_VI_KHAC: 'Đơn vị khác',
+    PHONG_BAN: 'Phòng ban',
+    TRUONG: 'Trường',
+    KHOA: 'Khoa'
+  }
+
+  // Lấy tiêu đề trang dựa trên loại đơn vị
+  const getPageTitle = () => {
+    if (loaiDonVi && LOAI_DON_VI_DANH_MUC[loaiDonVi as keyof typeof LOAI_DON_VI_DANH_MUC]) {
+      return `Danh sách ${LOAI_DON_VI_DANH_MUC[loaiDonVi as keyof typeof LOAI_DON_VI_DANH_MUC].label}`
+    }
+    return 'Danh sách đơn vị'
   }
 
   const allColumns: TableColumnType[] = useMemo(() => {
@@ -584,19 +601,21 @@ export default function DonviPage() {
               classNames={{ inputWrapper: 'h-8 bg-white border border-gray-200 rounded-lg' }}
               endContent={isFetching && <Spinner size="sm" />}
             />
-            <SelectDropdown
-              label="Loại đơn vị"
-              options={[
-                { value: 'all', label: 'Tất cả loại' },
-                ...Object.entries(UNIT_TYPE_LABELS).map(([key, label]) => ({
-                  value: key,
-                  label: label
-                }))
-              ]}
-              value={filters.selectedClassify || 'all'}
-              onChange={(val) => setFilters({ selectedClassify: val as string, page: 1 })}
-              className="w-full md:max-w-[200px]"
-            />
+            {!loaiDonVi && (
+              <SelectDropdown
+                label="Loại đơn vị"
+                options={[
+                  { value: 'all', label: 'Tất cả loại' },
+                  ...Object.entries(UNIT_TYPE_LABELS).map(([key, label]) => ({
+                    value: key,
+                    label: label
+                  }))
+                ]}
+                value={filters.selectedClassify || 'all'}
+                onChange={(val) => setFilters({ selectedClassify: val as string, page: 1 })}
+                className="w-full md:max-w-[200px]"
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -636,7 +655,7 @@ export default function DonviPage() {
                 color="primary"
                 size="sm"
                 startContent={<Plus size={18} />}
-                className="font-medium"
+                className="font-medium rounded-md px-4"
                 onPress={() => onOpenDrawerAdd()}
               >
                 Thêm mới
@@ -669,20 +688,24 @@ export default function DonviPage() {
         />
 
         <DrawerCommon
-          title="Thêm đơn vị"
+          title={loaiDonVi ? `Thêm ${UNIT_TYPE_LABELS[loaiDonVi]?.toLowerCase() || 'đơn vị'}` : "Thêm đơn vị"}
           open={isOpenDrawerAdd}
           onClose={() => {
             onCloseDrawerAdd()
             setFormData({})
           }}
-          handleSubmitApi={(_id, data) => DonviAxios.create(data!)}
+          handleSubmitApi={(_id, data) => {
+            // Tự động gán loại đơn vị nếu đang ở danh mục con
+            const submitData = loaiDonVi ? { ...data, loai: loaiDonVi } : data
+            return DonviAxios.create(submitData!)
+          }}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
             setFormData({})
           }}
         >
-          <FormDonvi formData={formData} setFormData={setFormData} isEdit={false} />
+          <FormDonvi formData={formData} setFormData={setFormData} isEdit={false} loaiDonVi={loaiDonVi} />
         </DrawerCommon>
 
         <DrawerCommon

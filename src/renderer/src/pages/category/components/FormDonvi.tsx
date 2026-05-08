@@ -9,9 +9,10 @@ type FormDonviProps = {
   formData: Record<string, any>
   setFormData: Dispatch<SetStateAction<Record<string, any>>>
   isEdit?: boolean
+  loaiDonVi?: string
 }
 
-export default function FormDonvi({ formData, setFormData, isEdit }: FormDonviProps) {
+export default function FormDonvi({ formData, setFormData, isEdit, loaiDonVi }: FormDonviProps) {
   const [selectedTab, setSelectedTab] = useState<string>('select')
 
   const handleChange = (name: string, value: any) => {
@@ -92,17 +93,32 @@ export default function FormDonvi({ formData, setFormData, isEdit }: FormDonviPr
             </div>
 
             <div className="md:col-span-1">
-              <SelectFloatingLabel
-                label="Loại"
-                name="loai"
-                value={formData.loai}
-                isRequired
-                options={Object.values(LOAI_DON_VI).map((item) => ({
-                  value: item.value,
-                  label: item.label
-                }))}
-                onChange={(val) => handleChange('loai', val)}
-              />
+              {loaiDonVi ? (
+                // Khi ở danh mục con, hiển thị loại đã chọn (readonly)
+                <InputFloatingEndLabel
+                  label="Loại"
+                  name="loai_display"
+                  value={loaiDonVi === 'PHONG_BAN' ? 'Phòng ban' :
+                         loaiDonVi === 'TRUNG_TAM' ? 'Trung tâm' :
+                         loaiDonVi === 'TRUONG' ? 'Trường' :
+                         loaiDonVi === 'KHOA' ? 'Khoa' :
+                         LOAI_DON_VI[loaiDonVi as keyof typeof LOAI_DON_VI]?.label || loaiDonVi}
+                  isReadOnly
+                />
+              ) : (
+                // Khi ở danh mục tổng, cho phép chọn loại
+                <SelectFloatingLabel
+                  label="Loại"
+                  name="loai"
+                  value={formData.loai}
+                  isRequired
+                  options={Object.values(LOAI_DON_VI).map((item) => ({
+                    value: item.value,
+                    label: item.label
+                  }))}
+                  onChange={(val) => handleChange('loai', val)}
+                />
+              )}
             </div>
 
             <div className="md:col-span-2">

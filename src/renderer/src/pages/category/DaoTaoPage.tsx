@@ -341,7 +341,7 @@ export default function DaoTaoPage() {
                             color="primary"
                             size="sm"
                             startContent={<Plus size={18} />}
-                            className="font-medium"
+                            className="font-medium rounded-md px-4"
                             onPress={() => {
                                 setFormData({ trang_thai: 'Dang_dien_ra' })
                                 onOpenDrawerAdd()

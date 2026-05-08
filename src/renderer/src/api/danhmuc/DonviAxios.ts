@@ -117,5 +117,44 @@ export const LOAI_DON_VI = {
     label: 'Đơn vị khác',
     value: 'DON_VI_KHAC',
     color: 'red'
+  },
+  // Các loại đơn vị mới cho danh mục dùng chung
+  PHONG_BAN: {
+    label: 'Phòng ban',
+    value: 'PHONG_BAN',
+    color: 'green'
+  },
+  KHOA: {
+    label: 'Khoa',
+    value: 'KHOA',
+    color: 'primary'
+  }
+} as const
+
+// Các loại đơn vị cho danh mục dùng chung (dropdown)
+export const LOAI_DON_VI_DANH_MUC = {
+  PHONG_BAN: {
+    label: 'Phòng ban',
+    value: 'PHONG_BAN',
+    color: 'green',
+    icon: 'Building'
+  },
+  TRUNG_TAM: {
+    label: 'Trung tâm',
+    value: 'TRUNG_TAM',
+    color: 'secondary',
+    icon: 'Building2'
+  },
+  TRUONG: {
+    label: 'Trường',
+    value: 'TRUONG',
+    color: 'warning',
+    icon: 'School'
+  },
+  KHOA: {
+    label: 'Khoa',
+    value: 'KHOA',
+    color: 'primary',
+    icon: 'GraduationCap'
   }
 } as const
