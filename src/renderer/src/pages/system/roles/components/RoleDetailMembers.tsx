@@ -1,23 +1,33 @@
-﻿import { useMemo } from 'react'
-import { Input, cn, Button, Chip } from '@heroui/react'
-import { Search, Users, ChevronLeft, ChevronRight, X } from 'lucide-react'
+﻿import { useMemo, useState } from 'react'
+import { Input, Button, Chip } from '@heroui/react'
+import { Search, Trash2, Plus, X } from 'lucide-react'
 import { useRoleMemberLogic } from '../hooks/useRoleMemberLogic'
 import { User } from '@renderer/api/admin/usersAxios'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { UserAvatarVertical } from '@renderer/components/UserAvatar'
-import { motion, AnimatePresence } from 'framer-motion'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { Role } from '@renderer/api/admin/rolesAxios'
+import { AddMemberModal } from './AddMemberModal'
+import SearchInput from '@renderer/components/SearchInput'
+import ConfirmModal from '@renderer/components/ConfirmModal'
 
 interface RoleDetailMembersProps {
   activeRole: Role | undefined
 }
 
 export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    content: '',
+    onConfirm: () => {}
+  })
+
   const {
-    isManaging,
-    setIsManaging,
+    isAddModalOpen,
+    setIsAddModalOpen,
+
     // InRole State
     searchInRole,
     setSearchInRole,
@@ -25,6 +35,7 @@ export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
     setPageInRole,
     limitInRole,
     setLimitInRole,
+
     // Available State
     searchAvailable,
     setSearchAvailable,
@@ -32,6 +43,7 @@ export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
     setPageAvailable,
     limitAvailable,
     setLimitAvailable,
+
     // Other
     selectedInRole,
     setSelectedInRole,
@@ -54,6 +66,7 @@ export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
   const columns: TableColumnType<User>[] = useMemo(
     () => [
       { name: 'STT', uid: 'stt', width: 50 },
+
       {
         name: 'THÀNH VIÊN',
         uid: 'ql_nguoi_dung_ho_ten',
@@ -65,7 +78,9 @@ export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
           />
         )
       },
+
       { name: 'EMAIL', uid: 'ql_nguoi_dung_email', width: 220 },
+
       {
         name: 'TRẠNG THÁI',
         uid: 'active_flag',
@@ -81,6 +96,7 @@ export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
           </Chip>
         )
       },
+
       {
         name: 'ĐƠN VỊ',
         uid: 'ten_don_vi',
@@ -90,161 +106,150 @@ export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
     []
   )
 
+  const selectedInRoleCount =
+    selectedInRole === 'all'
+      ? recordsFilteredCurrent
+      : selectedInRole instanceof Set
+        ? selectedInRole.size
+        : 0
+
   return (
-    <div className="flex flex-col bg-white dark:bg-gray-800 rounded-xl">
+  <div className="flex flex-col w-full h-full overflow-hidden bg-white dark:bg-gray-800">
+      {/* Toolbar */}
+      <div className="px-3.5 py-2.5 flex items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-800">
 
-
-      <div className={cn('flex gap-4 relative', isManaging && 'min-h-[500px]')}>
-        {/* Left Board: Members in Role */}
-        <motion.div
-          layout
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className={cn('flex flex-col min-h-0', isManaging ? 'flex-1 w-0' : 'w-full')}
-        >
-          <div className={cn('flex flex-col overflow-hidden bg-white dark:bg-gray-900 rounded-lg', isManaging && 'flex-1')}>
-            <div className="px-4 py-2 flex items-center justify-between gap-4">
-              <span className="text-xs font-bold text-gray-500 uppercase whitespace-nowrap">
-                Thành viên vai trò ({recordsFilteredCurrent})
-              </span>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Tìm kiếm..."
-                  startContent={<Search size={18} className="text-gray-400" />}
-                  variant="bordered"
-                  radius="sm"
-                  value={searchInRole}
-                  onValueChange={setSearchInRole}
-                />
-                <Button
-                  color={isManaging ? 'danger' : 'primary'}
-                  variant="flat"
-                  radius="sm"
-                  onPress={() => setIsManaging(!isManaging)}
-                  startContent={isManaging ? <X size={18} className="shrink-0" /> : <Users size={18} className="shrink-0" />}
-                  className="font-medium shrink-0 whitespace-nowrap"
-                >
-                  {isManaging ? 'Đóng' : 'Thêm thành viên'}
-                </Button>
-              </div>
-            </div>
-            <div className={cn('overflow-hidden min-w-0', isManaging && 'flex-1')}>
-              <TableHr
-                columns={columns}
-                data={currentMembers}
-                isLoading={isLoadingCurrent}
-                primaryKey="ql_nguoi_dung_id"
-                enableSorting={false}
-                selectedKeys={isManaging ? selectedInRole : undefined}
-                onSelectionChange={isManaging ? setSelectedInRole : undefined}
-                enableResizing
-                enablePinning={false}
-                columnWidths={columnWidths}
-                onColumnResize={(uid, width) =>
-                  setColumnWidths((prev) => ({ ...prev, [uid]: width }))
-                }
-                className="h-full"
+        <div className="w-52">
+            <div className="w-full max-w-md">
+              <SearchInput
+                placeholder="Tìm kiếm thành viên..."
+                value={searchInRole}
+                onChange={setSearchInRole}
+                className="w-full bg-white dark:bg-gray-900"
               />
             </div>
-            <TablePagination
-              page={pageInRole}
-              total={recordsFilteredCurrent}
-              limit={limitInRole}
-              onChangePage={setPageInRole}
-              onChangeLimit={setLimitInRole}
-              className="p-2 border-t border-gray-50 dark:border-gray-800"
-            />
           </div>
-        </motion.div>
 
-        <AnimatePresence>
-          {isManaging && (
+        <div className="flex items-center gap-2">
+
+          {selectedInRoleCount > 0 && (
             <>
-              {/* Middle Actions */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="flex flex-col justify-center gap-3 z-10"
+              <Button
+                onPress={() => setSelectedInRole(new Set([]))}
+                className="h-9 px-4 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-all duration-250 border-none flex items-center gap-1.5"
               >
-                <Button
-                  isIconOnly
-                  variant="flat"
-                  color="primary"
-                  className="shadow-sm border border-blue-200"
-                  size="md"
-                  title="Bỏ khỏi vai trò"
-                  isLoading={isPendingRemove}
-                  onPress={handleRemoveMembers}
-                >
-                  <ChevronRight size={20} />
-                </Button>
-                <Button
-                  isIconOnly
-                  variant="flat"
-                  color="primary"
-                  className="shadow-sm border border-blue-200"
-                  size="md"
-                  title="Thêm vào vai trò"
-                  isLoading={isPendingAdd}
-                  onPress={handleAddMembers}
-                >
-                  <ChevronLeft size={20} />
-                </Button>
-              </motion.div>
-
-              {/* Right Board: Available Users */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="flex-1 w-0 flex flex-col min-h-0"
+                <X size={16} />
+                Bỏ chọn tất cả
+              </Button>
+              <Button
+                onPress={() => {
+                  setConfirmModal({
+                    isOpen: true,
+                    title: 'Xác nhận xóa thành viên',
+                    content: `Bạn có chắc chắn muốn xóa ${selectedInRoleCount} thành viên khỏi vai trò "${activeRole?.ql_vai_tro_ten || ''}"?`,
+                    onConfirm: () => {
+                      handleRemoveMembers()
+                      setConfirmModal(prev => ({
+                        ...prev,
+                        isOpen: false
+                      }))
+                    }
+                  })
+                }}
+                isLoading={isPendingRemove}
+                className="h-9 px-4 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-700 font-semibold rounded-xl transition-all duration-250 border-none flex items-center gap-1.5"
               >
-                <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-900 rounded-lg">
-                  <div className="px-4 py-2 flex items-center justify-between gap-4">
-                    <span className="text-xs font-bold text-gray-500 uppercase whitespace-nowrap">
-                      Danh sách người dùng ({recordsFilteredAvailable})
-                    </span>
-                    <Input
-                      placeholder="Tìm người dùng..."
-                      startContent={<Search size={18} className="text-gray-400 shrink-0" />}
-                      variant="bordered"
-                      radius="sm"
-                      value={searchAvailable}
-                      onValueChange={setSearchAvailable}
-                    />
-                  </div>
-                  <div className="flex-1 overflow-hidden min-w-0">
-                    <TableHr
-                      columns={columns}
-                      data={availableUsers}
-                      isLoading={isLoadingAvailable}
-                      primaryKey="ql_nguoi_dung_id"
-                      enableSorting={false}
-                      selectedKeys={selectedAvailable}
-                      onSelectionChange={setSelectedAvailable}
-                      enableResizing
-                      enablePinning={false}
-                      columnWidths={columnWidths}
-                      onColumnResize={(uid, width) =>
-                        setColumnWidths((prev) => ({ ...prev, [uid]: width }))
-                      }
-                      className="h-full"
-                    />
-                  </div>
-                  <TablePagination
-                    page={pageAvailable}
-                    total={recordsFilteredAvailable}
-                    limit={limitAvailable}
-                    onChangePage={setPageAvailable}
-                    onChangeLimit={setLimitAvailable}
-                    className="p-2 border-t border-gray-50 dark:border-gray-800"
-                  />
-                </div>
-              </motion.div>
+                <Trash2 size={16} />
+                Xóa ({selectedInRoleCount})
+              </Button>
             </>
           )}
-        </AnimatePresence>
+
+
+          <Button
+            onPress={() => setIsAddModalOpen(true)}
+            className="h-9 px-4 bg-[#C2E7FF] hover:bg-[#b5dffa] active:bg-[#99c8e8] text-[#001D35] font-semibold rounded-xl transition-all duration-250 shadow-sm hover:shadow-md border-none flex items-center gap-1.5 shrink-0 whitespace-nowrap"
+          >
+            <Plus size={16} />
+            Thêm thành viên
+          </Button>
+
+        </div>
       </div>
+
+      {/* Members Table */}
+<div className="flex-1 overflow-hidden relative min-h-0">
+  <TableHr
+    columns={columns}
+    data={currentMembers}
+    isLoading={isLoadingCurrent}
+    primaryKey="ql_nguoi_dung_id"
+    enableSorting={false}
+    selectedKeys={selectedInRole}
+    onSelectionChange={setSelectedInRole}
+    enableResizing
+    enablePinning={false}
+    columnWidths={columnWidths}
+    onColumnResize={(uid, width) =>
+      setColumnWidths((prev) => ({ ...prev, [uid]: width }))
+    }
+  />
+</div>
+
+      {/* Pagination */}
+      <div>
+        <TablePagination
+          page={pageInRole}
+          total={recordsFilteredCurrent}
+          limit={limitInRole}
+          onChangePage={setPageInRole}
+          onChangeLimit={setLimitInRole}
+          enableStickyPagination
+          className="p-1.5 border-t border-gray-50 dark:border-gray-800 bg-white dark:bg-gray-800"
+        />
+      </div>
+
+      {/* Confirm Remove Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() =>
+          setConfirmModal(prev => ({
+            ...prev,
+            isOpen: false
+          }))
+        }
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        content={confirmModal.content}
+        isDanger
+      />
+
+      {/* Add Member Modal */}
+      <AddMemberModal
+        isOpen={isAddModalOpen}
+        onOpenChange={(open) => {
+          setIsAddModalOpen(open)
+          if (!open) {
+            setSelectedAvailable(new Set([]))
+          }
+        }}
+        activeRoleName={activeRole?.ql_vai_tro_ten}
+        availableUsers={availableUsers}
+        isLoading={isLoadingAvailable}
+        search={searchAvailable}
+        onSearchChange={setSearchAvailable}
+        page={pageAvailable}
+        limit={limitAvailable}
+        recordsFiltered={recordsFilteredAvailable}
+        onChangePage={setPageAvailable}
+        onChangeLimit={setLimitAvailable}
+        selectedKeys={selectedAvailable}
+        onSelectionChange={setSelectedAvailable}
+        onAdd={() => {
+          handleAddMembers()
+          setIsAddModalOpen(false)
+        }}
+        isPendingAdd={isPendingAdd}
+      />
     </div>
   )
 }

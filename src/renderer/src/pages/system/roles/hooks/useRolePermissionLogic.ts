@@ -1,6 +1,7 @@
 import { toast } from '@heroui-v3/react'
-import { Role, rolesAxios } from '@renderer/api/admin/rolesAxios'
-import { useRoleStore } from '@renderer/store/useRoleStore'
+import { Role } from '@renderer/api/admin/rolesAxios'
+import { mockRolesAxios } from '../fakeData'
+import { useRoleStore } from './useRoleStore'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -25,12 +26,17 @@ export const useRolePermissionLogic = ({ activeRole }: UseRolePermissionLogicPro
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<(string | number)[]>([])
   const [search, setSearch] = useState('')
 
+  // Reset search when switching roles
+  useEffect(() => {
+    setSearch('')
+  }, [activeRole?.ql_vai_tro_id])
+
   // Fetch all permissions and current role's permissions
   const { data: permissionData, isLoading } = useQuery({
     queryKey: ['role-permissions-manage', activeRole?.ql_vai_tro_id],
     queryFn: async () => {
       if (!activeRole) return { all: [], current: [] }
-      const res: any = await rolesAxios.getRolePermissions(activeRole.ql_vai_tro_id)
+      const res: any = await mockRolesAxios.getRolePermissions(activeRole.ql_vai_tro_id)
       if (res.success) {
         return {
           all: res.permissions || [],
@@ -138,18 +144,17 @@ export const useRolePermissionLogic = ({ activeRole }: UseRolePermissionLogicPro
     })
   }
 
-  const toggleGroup = (parentId: string | number, childrenIds: (string | number)[]) => {
+  const toggleGroup = (_parentId: string | number, childrenIds: (string | number)[]) => {
     const allSelected = childrenIds.every((id) => selectedPermissionIds.includes(id))
     if (allSelected) {
       // Unselect all
       setSelectedPermissionIds((prev) =>
-        prev.filter((id) => !childrenIds.includes(id) && id !== parentId)
+        prev.filter((id) => !childrenIds.includes(id))
       )
     } else {
       // Select all
       setSelectedPermissionIds((prev) => {
         const newIds = [...prev]
-        if (!newIds.includes(parentId)) newIds.push(parentId)
         childrenIds.forEach((id) => {
           if (!newIds.includes(id)) newIds.push(id)
         })
@@ -160,7 +165,7 @@ export const useRolePermissionLogic = ({ activeRole }: UseRolePermissionLogicPro
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      rolesAxios.saveRolePermissions(activeRole!.ql_vai_tro_id, selectedPermissionIds),
+      mockRolesAxios.saveRolePermissions(activeRole!.ql_vai_tro_id, selectedPermissionIds),
     onSuccess: (res: any) => {
       if (res.success) {
         toast('Thành công', { description: 'Cập nhật quyền hạn thành công', variant: 'success' })

@@ -1,8 +1,8 @@
-﻿import { Button, Tooltip, cn, ScrollShadow, Skeleton } from '@heroui/react'
-import { Shield, Plus } from 'lucide-react'
+﻿import { Button, Tooltip, cn, Skeleton } from '@heroui/react'
+import { Plus } from 'lucide-react'
 import { SideLeftToggle } from '../../../document/components/sideLeft/SideLeftToggle'
 import { useQuery } from '@tanstack/react-query'
-import { rolesAxios } from '@renderer/api/admin/rolesAxios'
+import { mockRolesAxios } from '../fakeData'
 
 interface SideLeftRoleProps {
   isCollapsed: boolean
@@ -25,7 +25,7 @@ export const SideLeftRole = ({
     queryKey: ['roleOptionsSidebar'],
     queryFn: async () => {
       try {
-        const res: any = await rolesAxios.getOptions()
+        const res: any = await mockRolesAxios.getOptions()
         if (res.success && Array.isArray(res.data)) {
            return res.data
         }
@@ -38,19 +38,14 @@ export const SideLeftRole = ({
   })
 
   return (
-    <div
-      className={cn(
-        'h-full w-full shrink-0 bg-white dark:bg-gray-800 flex flex-col py-2 border-r border-gray-100 dark:border-gray-800 transition-all duration-300',
-        className
-      )}
-    >
-      {/* 1. Toggle Button */}
+    <div className={cn('flex flex-col', className)}>
+      {/* Toggle Button */}
       <SideLeftToggle isCollapsed={isCollapsed} onToggle={onToggle} />
 
-      {/* 2. Role List Title & Add Button */}
+      {/* Role List Title & Add Button */}
       {!isCollapsed ? (
-        <div className="px-6 mb-4 flex items-center justify-between group/title">
-          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+        <div className="px-5 mb-3 flex items-center justify-between group/title">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
             Danh sách vai trò
           </span>
           <Button
@@ -59,14 +54,14 @@ export const SideLeftRole = ({
             variant="flat"
             radius="full"
             onPress={onOpenCreate}
-            className="bg-blue-50 text-blue-600 dark:bg-blue-900/30 h-8 w-8 min-w-8 transition-all hover:scale-110 active:scale-95"
+            className="bg-blue-50 text-blue-600 dark:bg-blue-900/30 h-7 w-7 min-w-7 transition-all hover:scale-110 active:scale-95"
             title="Thêm vai trò mới"
           >
-            <Plus size={18} strokeWidth={3} />
+            <Plus size={16} strokeWidth={3} />
           </Button>
         </div>
       ) : (
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-3">
            <Button
             isIconOnly
             size="sm"
@@ -74,20 +69,20 @@ export const SideLeftRole = ({
             radius="lg"
             color="primary"
             onPress={onOpenCreate}
-            className="bg-blue-50 text-blue-600 dark:bg-blue-900/30 h-10 w-10 min-w-10"
+            className="bg-blue-50 text-blue-600 dark:bg-blue-900/30 h-9 w-9 min-w-9"
             title="Thêm vai trò mới"
           >
-            <Plus size={20} strokeWidth={2.5} />
+            <Plus size={18} strokeWidth={2.5} />
           </Button>
         </div>
       )}
 
-      {/* 4. Role List */}
-      <ScrollShadow className="flex-1 px-2 space-y-0.5 custom-scrollbar">
+      {/* Role List */}
+      <div className="flex flex-col px-2 space-y-0.5">
         {isLoading ? (
-          <div className="space-y-2 px-2">
+          <div className="space-y-1.5 px-2">
              {[1, 2, 3, 4, 5].map(i => (
-               <Skeleton key={i} className="h-8 w-full rounded-lg" />
+               <Skeleton key={i} className="h-7 w-full rounded-lg" />
              ))}
           </div>
         ) : (
@@ -95,6 +90,12 @@ export const SideLeftRole = ({
             const roleId = role.ql_vai_tro_id || role.value
             const roleName = role.ql_vai_tro_ten || role.label
             const isActive = String(activeRoleId) === String(roleId)
+            const roleDotColor = role.dotColor || 'bg-gray-400'
+            const roleTextColor = role.textColor || 'text-gray-500'
+            const roleBg = role.bgColor || 'bg-gray-50 dark:bg-gray-700'
+            const roleBorder = role.borderColor || 'bg-gray-400'
+
+            const hasCustomColor = role.customColorHex
 
             const content = (
               <Button
@@ -103,28 +104,41 @@ export const SideLeftRole = ({
                 onPress={() => onRoleSelect?.(role)}
                 className={cn(
                   'relative overflow-hidden transition-all duration-200 group',
-                  isCollapsed
-                    ? 'w-10 h-10 min-w-10 p-0 justify-center rounded-full mx-auto'
-                    : 'w-full h-9 justify-start pl-4 rounded-l-none rounded-r-full',
-                  isActive
-                    ? 'bg-blue-50 text-blue-700 font-bold dark:bg-blue-900/30 dark:text-blue-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    isCollapsed
+                    ? 'w-9 h-9 min-w-9 p-0 justify-center rounded-full mx-auto'
+                    : 'w-full h-8 justify-start pl-3.5 rounded-l-none rounded-r-full',
+                  isActive && !hasCustomColor
+                    ? `${roleBg} ${roleTextColor} font-bold dark:text-white`
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                 )}
+                style={isActive && hasCustomColor ? {
+                  backgroundColor: role.customColorHex + '20' // 20 = 12.5% opacity
+                } : undefined}
                 radius="none"
               >
-                <div className={cn(
-                  'shrink-0 flex items-center justify-center transition-transform',
-                  isActive ? 'scale-110 text-blue-600' : 'scale-100 text-gray-400'
-                )}>
-                  <Shield size={isCollapsed ? 20 : 16} />
-                </div>
+                <div 
+                  className={cn(
+                    'shrink-0 rounded-full transition-transform border border-white/50 dark:border-white/10 shadow-sm',
+                    isCollapsed ? 'w-4 h-4' : 'w-3 h-3',
+                    isActive ? 'scale-110' : 'scale-100',
+                    !hasCustomColor && roleDotColor
+                  )}
+                  style={hasCustomColor ? {
+                    backgroundColor: role.customColorHex
+                  } : undefined}
+                />
                 {!isCollapsed && (
-                  <span className="ml-3 text-[13px] truncate flex-1 text-left">
+                  <span className="ml-2.5 text-xs truncate flex-1 text-left text-gray-900 dark:text-gray-100">
                     {roleName}
                   </span>
                 )}
                 {isActive && !isCollapsed && (
-                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-full" />
+                   <div 
+                    className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-r-full", !hasCustomColor && roleBorder)}
+                    style={hasCustomColor ? {
+                      backgroundColor: role.customColorHex
+                    } : undefined}
+                   />
                 )}
               </Button>
             )
@@ -144,7 +158,7 @@ export const SideLeftRole = ({
             )
           })
         )}
-      </ScrollShadow>
+      </div>
     </div>
   )
 }

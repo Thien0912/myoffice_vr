@@ -1,8 +1,9 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { rolesAxios, Role } from '@renderer/api/admin/rolesAxios'
-import { useRoleStore } from '@renderer/store/useRoleStore'
+import { Role } from '@renderer/api/admin/rolesAxios'
+import { mockRolesAxios } from '../fakeData'
+import { useRoleStore } from './useRoleStore'
 import { Selection } from '@heroui/react'
 import { toast } from "@heroui-v3/react";
 
@@ -30,7 +31,7 @@ export const useRoleLogic = () => {
         setActiveTab,
         hasUnsavedChanges,
         setHasUnsavedChanges
-    } = useRoleStore()
+    } =         useRoleStore()
 
     const queryClient = useQueryClient()
     const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]))
@@ -72,7 +73,7 @@ export const useRoleLogic = () => {
             onConfirm: async () => {
                 setConfirmModal((p) => ({ ...p, isLoading: true }))
                 try {
-                    const res = await rolesAxios.delete(role.ql_vai_tro_id)
+                    const res = await mockRolesAxios.delete(role.ql_vai_tro_id)
                     if (res.success) {
                         toast('Thành công', { description: 'Xóa vai trò thành công', variant: 'success' })
                         queryClient.invalidateQueries({ queryKey: ['admin-roles'] })
@@ -115,7 +116,7 @@ export const useRoleLogic = () => {
                 order: JSON.stringify(order)
             }
 
-            const res: any = await rolesAxios.getAll(params)
+            const res: any = await mockRolesAxios.getAll(params)
             return res?.data || { data: [], recordsTotal: 0, recordsFiltered: 0 }
         },
         placeholderData: keepPreviousData

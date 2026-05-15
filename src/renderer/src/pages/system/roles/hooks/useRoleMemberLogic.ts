@@ -1,10 +1,9 @@
 ﻿import { useState, useEffect } from 'react'
 import { Selection } from '@heroui/react'
 import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query'
-import { usersAxios, User } from '@renderer/api/admin/usersAxios'
-import { rolesAxios, Role } from '@renderer/api/admin/rolesAxios'
-
-import { useRoleStore } from '@renderer/store/useRoleStore'
+import { User } from '@renderer/api/admin/usersAxios'
+import { Role } from '@renderer/api/admin/rolesAxios'
+import { mockUsersAxios, mockRolesAxios } from '../fakeData'
 import { toast } from "@heroui-v3/react";
 
 interface UseRoleMemberLogicProps {
@@ -12,8 +11,8 @@ interface UseRoleMemberLogicProps {
 }
 
 export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
-    const { isManagingMember: isManaging, setIsManagingMember: setIsManaging } = useRoleStore()
     const queryClient = useQueryClient()
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
     // State for InRole Table
     const [searchInRole, setSearchInRole] = useState('')
@@ -34,7 +33,7 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
 
     // Mutations
     const addMembersMutation = useMutation({
-        mutationFn: (userIds: (string | number)[]) => rolesAxios.addMember(activeRole!.ql_vai_tro_id, userIds as string[]),
+        mutationFn: (userIds: (string | number)[]) => mockRolesAxios.addMember(activeRole!.ql_vai_tro_id, userIds as string[]),
         onSuccess: (res: any) => {
             if (res.success) {
                 toast('Thành công', { description: 'Đã thêm thành viên vào vai trò', variant: 'success' })
@@ -49,7 +48,7 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
     })
 
     const removeMembersMutation = useMutation({
-        mutationFn: (userIds: (string | number)[]) => rolesAxios.removeMember(activeRole!.ql_vai_tro_id, userIds as string[]),
+        mutationFn: (userIds: (string | number)[]) => mockRolesAxios.removeMember(activeRole!.ql_vai_tro_id, userIds as string[]),
         onSuccess: (res: any) => {
             if (res.success) {
                 toast('Thành công', { description: 'Đã xóa thành viên khỏi vai trò', variant: 'success' })
@@ -85,6 +84,16 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
         }
     }
 
+    // Reset page & search when switching roles
+    useEffect(() => {
+        setPageInRole(1)
+        setPageAvailable(1)
+        setSearchInRole('')
+        setSearchAvailable('')
+        setSelectedInRole(new Set([]))
+        setSelectedAvailable(new Set([]))
+    }, [activeRole?.ql_vai_tro_id])
+
     // Debounce search InRole
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -108,7 +117,7 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
         queryKey: ['role-members', activeRole?.ql_vai_tro_id, pageInRole, limitInRole, debouncedSearchInRole],
         queryFn: async () => {
             if (!activeRole) return { data: [], recordsTotal: 0, recordsFiltered: 0 }
-            const res: any = await usersAxios.getAll({
+            const res: any = await mockUsersAxios.getAll({
                 page: pageInRole,
                 per_page: limitInRole,
                 search: debouncedSearchInRole,
@@ -124,8 +133,8 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
     const { data: availableUsersData, isLoading: isLoadingAvailable } = useQuery({
         queryKey: ['available-users', activeRole?.ql_vai_tro_id, pageAvailable, limitAvailable, debouncedSearchAvailable],
         queryFn: async () => {
-            if (!activeRole || !isManaging) return { data: [], recordsTotal: 0, recordsFiltered: 0 }
-            const res: any = await usersAxios.getAll({
+            if (!activeRole) return { data: [], recordsTotal: 0, recordsFiltered: 0 }
+            const res: any = await mockUsersAxios.getAll({
                 page: pageAvailable,
                 per_page: limitAvailable,
                 search: debouncedSearchAvailable,
@@ -134,7 +143,7 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
             })
             return res?.data || { data: [], recordsTotal: 0, recordsFiltered: 0 }
         },
-        enabled: !!activeRole?.ql_vai_tro_id && isManaging,
+        enabled: !!activeRole?.ql_vai_tro_id,
         placeholderData: keepPreviousData
     })
 
@@ -144,8 +153,8 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
     const recordsFilteredAvailable = availableUsersData?.recordsFiltered || 0
 
     return {
-        isManaging,
-        setIsManaging,
+        isAddModalOpen,
+        setIsAddModalOpen,
         // InRole State
         searchInRole,
         setSearchInRole,
