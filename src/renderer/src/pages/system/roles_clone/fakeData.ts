@@ -403,6 +403,7 @@ export const mockRolesAxios = {
           data.textColor = color.textClass
           data.bgColor = color.bgLightClass
           data.borderColor = color.borderClass
+          data.customColorHex = null // clear old custom color
         } else if (data.colorId.startsWith('#')) {
           // Custom hex color - use inline styles
           data.dotColor = '' // Will use inline style
@@ -441,6 +442,13 @@ export const mockRolesAxios = {
           bgColor: color.bgLightClass,
           borderColor: color.borderClass
         }
+      } else if (data.colorId.startsWith('#')) {
+        colorClasses = {
+          dotColor: '',
+          textColor: '',
+          bgColor: '',
+          borderColor: ''
+        }
       }
     }
     
@@ -453,7 +461,8 @@ export const mockRolesAxios = {
       total_members: 0,
       active_flag: 1,
       colorId: data.colorId,
-      ...colorClasses
+      ...colorClasses,
+      ...(data.colorId?.startsWith('#') ? { customColorHex: data.colorId } : {})
     }
     
     fakeRolesData.push(newRole)

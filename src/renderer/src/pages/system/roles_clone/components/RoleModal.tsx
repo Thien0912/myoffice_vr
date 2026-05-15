@@ -6,9 +6,10 @@ import { Role } from '@renderer/api/admin/rolesAxios'
 import { mockRolesAxios } from '../fakeData'
 import { HrInput } from '@renderer/components/hero-custom/HrInput'
 import { ROLE_COLORS, getRoleColorById } from '../constants/roleColors'
+import { ColorPickerModal } from './ColorPickerModal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from "@heroui-v3/react"
-import { Check } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 
 interface RoleModalProps {
   isOpen: boolean
@@ -20,6 +21,7 @@ interface RoleModalProps {
 export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role, onSuccess }) => {
   const queryClient = useQueryClient()
   const [hoveredColor, setHoveredColor] = useState<string | null>(null)
+  const [isCustomColorModalOpen, setIsCustomColorModalOpen] = useState(false)
 
   // Fetch all roles to check used colors
   const { data: existingRoles = [] } = useQuery({
@@ -51,30 +53,35 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
     reset,
     control,
     watch,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
       ql_vai_tro_ten: '',
       ql_vai_tro_mo_ta: '',
-      colorId: ''
+      colorId: '',
+      isCustomColor: false
     }
   })
 
   const selectedColorId = watch('colorId')
-  const selectedColor = selectedColorId ? getRoleColorById(selectedColorId) : null
+  const isCustomColor = watch('isCustomColor')
+  const selectedColor = selectedColorId && !selectedColorId.startsWith('#') ? getRoleColorById(selectedColorId) : null
 
   useEffect(() => {
     if (role) {
       reset({
         ql_vai_tro_ten: role.ql_vai_tro_ten,
         ql_vai_tro_mo_ta: role.ql_vai_tro_mo_ta || '',
-        colorId: (role as any).colorId || ''
+        colorId: (role as any).colorId || '',
+        isCustomColor: !!(role as any).customColorHex
       })
     } else {
       reset({
         ql_vai_tro_ten: '',
         ql_vai_tro_mo_ta: '',
-        colorId: ''
+        colorId: '',
+        isCustomColor: false
       })
     }
   }, [role, reset, isOpen])
@@ -82,10 +89,11 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
   const onSubmit = async (data: any) => {
     try {
       let res: any
+      const payload = { ...data }
       if (role) {
-        res = await mockRolesAxios.update(role.ql_vai_tro_id, data)
+        res = await mockRolesAxios.update(role.ql_vai_tro_id, payload)
       } else {
-        res = await mockRolesAxios.create(data)
+        res = await mockRolesAxios.create(payload)
       }
 
       if (res.success) {
@@ -96,6 +104,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
         queryClient.invalidateQueries({ queryKey: ['admin-roles'] })
         queryClient.invalidateQueries({ queryKey: ['roleOptionsSidebar'] })
         queryClient.invalidateQueries({ queryKey: ['admin-roles-for-colors'] })
+        queryClient.invalidateQueries({ queryKey: ['admin-roles-for-colors-info'] })
         onSuccess?.()
         onOpenChange(false)
       } else {
@@ -104,6 +113,12 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
     } catch (error: any) {
       toast('Lỗi', { description: error.message || 'Có lỗi xảy ra', variant: 'danger' })
     }
+  }
+
+  const handleCustomColorSelect = (colorHex: string) => {
+    setValue('colorId', colorHex, { shouldValidate: true, shouldDirty: true })
+    setValue('isCustomColor', true, { shouldDirty: true })
+    setIsCustomColorModalOpen(false)
   }
 
   const title = role ? 'Cập nhật vai trò' : 'Tạo vai trò mới'
@@ -163,12 +178,35 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
             <Modal.Body className="py-4 px-7!">
               <div className="flex flex-col gap-5">
                 {/* Role Name */}
-                <HrInput
-                  label="Tên vai trò"
-                  {...register('ql_vai_tro_ten', { required: 'Vui lòng nhập tên vai trò' })}
-                  errorMessage={errors.ql_vai_tro_ten?.message as string}
-                  isInvalid={!!errors.ql_vai_tro_ten}
+                <Controller
+                  name="ql_vai_tro_ten"
+                  control={control}
+                  rules={{ required: 'Vui lòng nhập tên vai trò' }}
+                  render={({ field }) => (
+                    <HrInput
+                      label="Tên vai trò"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      errorMessage={errors.ql_vai_tro_ten?.message as string}
+                      isInvalid={!!errors.ql_vai_tro_ten}
+                    />
+                  )}
                 />
+                {/* Description */}
+                <Controller
+                  name="ql_vai_tro_mo_ta"
+                  control={control}
+                  render={({ field }) => (
+                    <HrInput
+                      label="Mô tả"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    />
+                  )}
+                />
+
+                {/* Hidden field for custom color flag */}
+                <input type="hidden" {...register('isCustomColor')} />
                 
                 {/* Color Picker */}
                 <div className="space-y-2.5">
@@ -187,6 +225,17 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
                         </span>
                       </>
                     )}
+                    {isCustomColor && selectedColorId && (
+                      <>
+                        <div
+                          className="w-4 h-4 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm"
+                          style={{ backgroundColor: selectedColorId }}
+                        />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Màu tùy chỉnh
+                        </span>
+                      </>
+                    )}
                   </div>
                   
                   <Controller
@@ -194,66 +243,83 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
                     control={control}
                     rules={{ required: 'Vui lòng chọn màu sắc' }}
                     render={({ field }) => (
-                      <div className="grid grid-cols-10 gap-2">
+                      <div className="grid grid-cols-8 gap-2">
                         {ROLE_COLORS.map((color) => {
                           const isSelected = field.value === color.id
                           const isUsed = usedColorIds.includes(color.id)
-                          const isDisabled = isUsed && !isSelected
 
                           return (
                             <Tooltip
                               key={color.id}
-                              content={isDisabled ? `${color.name} (đã sử dụng)` : color.name}
-                              placement="top"
                               delay={200}
-                              closeDelay={0}
                             >
-                              <button
-                                type="button"
-                                disabled={isDisabled}
-                                onClick={() => field.onChange(color.id)}
-                                onMouseEnter={() => setHoveredColor(color.id)}
-                                onMouseLeave={() => setHoveredColor(null)}
-                                className={cn(
-                                  'relative w-8 h-8 rounded-lg transition-all duration-200 flex items-center justify-center',
-                                  'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-gray-800',
-                                  isSelected
-                                    ? 'ring-2 ring-offset-1 ring-offset-white dark:ring-offset-gray-800 ring-gray-900 dark:ring-white scale-110'
-                                    : 'hover:scale-105',
-                                  isDisabled
-                                    ? 'opacity-40 cursor-not-allowed grayscale'
-                                    : 'cursor-pointer hover:shadow-md',
-                                  color.bgClass
-                                )}
-                              >
-                                {isSelected && (
-                                  <Check size={16} className="text-white drop-shadow-md" strokeWidth={3} />
-                                )}
-                                {isDisabled && !isSelected && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-4 h-0.5 bg-gray-700 rotate-45 absolute" />
-                                  </div>
-                                )}
-                              </button>
+                              <Tooltip.Trigger>
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange(color.id)}
+                                  onMouseEnter={() => setHoveredColor(color.id)}
+                                  onMouseLeave={() => setHoveredColor(null)}
+                                  className={cn(
+                                    'relative w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center',
+                                    'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-gray-800',
+                                    isSelected
+                                      ? 'ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-110'
+                                      : 'hover:scale-110 hover:shadow-lg',
+                                    'cursor-pointer',
+                                    color.bgClass
+                                  )}
+                                >
+                                  {isSelected && (
+                                    <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />
+                                  )}
+                                  {isUsed && !isSelected && (
+                                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-500 rounded-full flex items-center justify-center">
+                                      <span className="text-[6px] text-white font-bold">!</span>
+                                    </div>
+                                  )}
+                                </button>
+                              </Tooltip.Trigger>
+                              <Tooltip.Content>
+                                {isUsed && !isSelected ? `${color.name} (Màu đã được dùng)` : color.name}
+                              </Tooltip.Content>
                             </Tooltip>
                           )
                         })}
+                        
+                        {/* Custom color button */}
+                        <Tooltip delay={200}>
+                          <Tooltip.Trigger>
+                            <button
+                              type="button"
+                              onClick={() => setIsCustomColorModalOpen(true)}
+                              className={cn(
+                                'relative w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center',
+                                'border-2 border-dashed border-gray-400 hover:border-gray-600',
+                                'hover:bg-gray-50 dark:hover:bg-gray-800',
+                                'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-gray-800',
+                                'cursor-pointer'
+                              )}
+                            >
+                              <Plus size={16} className="text-gray-500" />
+                            </button>
+                          </Tooltip.Trigger>
+                          <Tooltip.Content>Chọn màu tùy chỉnh</Tooltip.Content>
+                        </Tooltip>
                       </div>
                     )}
                   />
                   {errors.colorId && (
                     <p className="text-xs text-red-500 mt-1">{errors.colorId.message}</p>
                   )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Những màu đã được sử dụng sẽ bị vô hiệu hóa. Mỗi vai trò cần có một màu riêng biệt.
-                  </p>
+                  <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 bg-gray-500 rounded-full flex items-center justify-center">
+                        <span className="text-[6px] text-white font-bold">!</span>
+                      </div>
+                      <span>Màu đã được dùng</span>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Description */}
-                <HrInput
-                  label="Mô tả"
-                  {...register('ql_vai_tro_mo_ta')}
-                />
               </div>
             </Modal.Body>
 
@@ -300,6 +366,13 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onOpenChange, role
             </Modal.Footer>
           </form>
         </Modal.Dialog>
+
+        {/* Custom Color Picker Modal */}
+        <ColorPickerModal
+          isOpen={isCustomColorModalOpen}
+          onClose={() => setIsCustomColorModalOpen(false)}
+          onSelectColor={handleCustomColorSelect}
+        />
       </Modal.Container>
     </Modal.Backdrop>
   )
