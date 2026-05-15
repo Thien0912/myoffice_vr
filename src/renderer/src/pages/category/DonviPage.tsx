@@ -371,47 +371,6 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
         }
       },
       {
-        uid: 'ten_viet_tat',
-        name: 'Tên viết tắt',
-        sortable: true,
-        width: 120,
-        render: (_, row: any) => {
-          const isEditing =
-            editingCell?.id === row.id_don_vi && editingCell?.column === 'ten_viet_tat'
-          return isEditing ? (
-            <Input
-              autoFocus
-              size="sm"
-              variant="bordered"
-              value={editingCell.value}
-              onValueChange={(val) =>
-                setEditingCell((prev) => (prev ? { ...prev, value: val } : null))
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleFinishEdit()
-                if (e.key === 'Escape') setEditingCell(null)
-              }}
-              onBlur={handleFinishEdit}
-              classNames={{ input: 'text-sm' }}
-            />
-          ) : (
-            <div
-              className={`text-gray-600 cursor-pointer hover:text-blue-600 transition-colors ${!row.ten_viet_tat ? 'text-gray-400 italic' : ''}`}
-              onDoubleClick={() =>
-                setEditingCell({
-                  id: row.id_don_vi,
-                  column: 'ten_viet_tat',
-                  value: row.ten_viet_tat || ''
-                })
-              }
-              title="Double click để sửa"
-            >
-              {row.ten_viet_tat || '--'}
-            </div>
-          )
-        }
-      },
-      {
         uid: 'loai',
         name: 'Loại',
         sortable: true,

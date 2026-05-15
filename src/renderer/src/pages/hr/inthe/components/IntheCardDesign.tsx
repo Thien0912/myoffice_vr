@@ -5,7 +5,7 @@ import { Printer, RefreshCw, Type, User, Download, Upload, Camera, CreditCard } 
 import domtoimage from 'dom-to-image'
 import { jsPDF } from 'jspdf'
 import { useReactToPrint } from 'react-to-print'
-import bgCard from '@renderer/assets/images/idcard/id card nhan vien ver 5_Folder/id card nhan vien ver 5-03.png'
+import bgCard from '@renderer/assets/images/idcard/id card nhan vien ver 5_Folder/id card nhan vien 6.png'
 import { getAvatarUrl } from '@renderer/utils/urlUtils'
 import { toast } from "@heroui-v3/react";
 
@@ -24,21 +24,23 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
   })
 
   const [fontSizes, setFontSizes] = useState({
-    id: 9,
-    name: 12,
-    academicLabel: 9.3,
-    academic: 9.3,
-    positionLabel: 9.3,
-    position: 9.3,
-    unitLabel: 9.3,
-    unit: 9.3
+    idLabel: 6,
+    idValue: 7,
+    nameLabel: 6,
+    name: 9,
+    academicLabel: 6,
+    academic: 7,
+    positionLabel: 6,
+    position: 7,
+    unitLabel: 6,
+    unit: 7
   })
 
   // Position offsets (in px or %)
   const [positions, setPositions] = useState({
-    qrTop: 2,
-    qrRight: 1.67,
-    qrSize: 45.03,
+    qrTop: -1,
+    qrRight: -0.15,
+    qrSize: 40,
     contentTop: 56,
     contentLeft: 11,
     avatarTop: 16,
@@ -93,12 +95,30 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
     }
   }, [initialEmployee])
 
+  // Hàm làm sạch oklch khỏi CSS
+  const sanitizeOklch = (doc: Document) => {
+    const allElements = doc.querySelectorAll('*')
+    allElements.forEach((el) => {
+      const element = el as HTMLElement
+      // Reset tất cả inline styles có thể chứa oklch
+      element.style.cssText = element.style.cssText.replace(/oklch\([^)]+\)/g, '#000000')
+    })
+
+    // Xóa tất cả external stylesheets
+    const stylesheets = doc.querySelectorAll('link[rel="stylesheet"]')
+    stylesheets.forEach((sheet) => sheet.remove())
+
+    // Xóa tất cả style tags
+    const styleTags = doc.querySelectorAll('style')
+    styleTags.forEach((tag) => tag.remove())
+  }
+
   const handleDownloadPDF = async () => {
     if (!cardRef.current) return
 
     try {
       toast('Đang xử lý', { description: 'Vui lòng chờ trong giây lát...', variant: 'default' })
-
+      
       const dataUrl = await domtoimage.toPng(cardRef.current, {
         quality: 1,
         width: 84.68 * 3.78 * 2,
@@ -137,19 +157,21 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
       avatar: getAvatarUrl(initialEmployee?.avatar) || ''
     })
     setFontSizes({
-      id: 9,
-      name: 12,
-      academicLabel: 9.3,
-      academic: 9.3,
-      positionLabel: 9.3,
-      position: 9.3,
-      unitLabel: 9.3,
-      unit: 9.3
+      idLabel: 6,
+      idValue: 7,
+      nameLabel: 6,
+      name: 9,
+      academicLabel: 6,
+      academic: 7,
+      positionLabel: 6,
+      position: 7,
+      unitLabel: 6,
+      unit: 7
     })
     setPositions({
-      qrTop: 2,
-      qrRight: 1.67,
-      qrSize: 45.03,
+      qrTop: -1,
+      qrRight: -0.15,
+      qrSize: 40,
       contentTop: 56,
       contentLeft: 11,
       avatarTop: 16,
@@ -210,7 +232,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
             }
         }
     `}</style>
-
+        
       {/* Cột 1: Hiển thị thẻ và Nút in */}
       <div
         className={cn(
@@ -222,19 +244,20 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
           <CreditCard size={16} className="text-blue-500" /> Xem trước thẻ
         </h4>
 
-        <div className="flex flex-col items-center gap-6 lg:gap-10">
-          <div className="flex justify-center items-center p-4 lg:p-8 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-none no-print w-full overflow-x-auto custom-scrollbar">
+        <div className={cn("flex flex-col items-center gap-6 lg:gap-10 w-full", !isStacked && "flex-1")}>
+          <div className="flex justify-center items-center p-4 lg:p-8 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-none no-print w-full overflow-x-auto custom-scrollbar flex-1">
             <div
               ref={cardRef}
               className="relative shadow-2xl overflow-hidden print-area bg-white shrink-0"
               style={{
                 width: '84.68mm',
-                height: '53.2mm'
+                height: '53.2mm',
               }}
             >
               <img
                 src={bgCard}
                 alt="Card Background"
+                crossOrigin="anonymous"
                 className="absolute inset-0 w-full h-full object-cover z-0"
               />
 
@@ -245,7 +268,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                 <QRCodeSVG
                   value={`https://myoffice.nctu.edu.vn/profile/code/${employee.ma_nhan_vien}`}
                   size={positions.qrSize}
-                  fgColor="#005b9f"
+                  fgColor="#111111"
                   level="L"
                   includeMargin={false}
                 />
@@ -261,11 +284,12 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
               >
                 {/* Avatar */}
                 <div
-                  className="w-[79px] h-[105px] bg-white border border-gray-100 overflow-hidden shrink-0"
-                  style={{ marginTop: `${positions.avatarTop}px` }}
+                  className="w-[76px] h-[114px] bg-white border border-gray-100 overflow-hidden shrink-0 rounded-[4px]"
+                  style={{ marginTop: `${positions.avatarTop}px`,
+                  transform: `translate(-2.5px, -4.5px)`}}
                 >
                   {employee.avatar ? (
-                    <img src={employee.avatar} className="w-full h-full object-cover" />
+                    <img src={employee.avatar} crossOrigin="anonymous" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
                       <User size={40} />
@@ -275,7 +299,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
 
                 {/* Info Area */}
                 <div
-                  className="flex-1 relative bg-white"
+                  className="flex-1 relative"
                   style={{
                     marginLeft: `${positions.infoLeft}px`,
                     marginTop: `${positions.infoTop}px`,
@@ -284,117 +308,197 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                 >
                   {/* Employee ID */}
                   <div
-                    className="absolute font-semibold text-gray-800"
+                    className="absolute text-[#111111]"
                     style={{
-                      fontSize: `${fontSizes.id * 1.33}px`,
-                      top: `${positions.idTop}px`,
+                      top: `${positions.idTop - 20}px`,
                       left: `${positions.idLeft}px`
                     }}
                   >
-                    ID: {employee.ma_nhan_vien}
+                    <span style={{ fontSize: `${fontSizes.idLabel}pt`, fontFamily: 'Acumin Pro', display: 'inline-block',
+                      transform: 'scaleY(1.1)',
+                      transformOrigin: 'bottom'
+                      }}>Mã số / ID:</span>{' '}
+                    <span style={{ fontSize: `${fontSizes.idValue}pt`, fontFamily: 'Acumin Pro', fontWeight: 'bold', position: 'relative', top: '0.5px', display: 'inline-block',
+                      transform: 'scaleY(1.1)',
+                      transformOrigin: 'bottom' }}>
+                      {employee.ma_nhan_vien}
+                    </span>
                   </div>
-                  {/* Name */}
+
+                  {/* Name label */}
                   <div
-                    className="absolute font-semibold text-[#ee3235]"
+                    className="absolute"
                     style={{
-                      fontSize: `${fontSizes.name * 1.33}px`,
-                      lineHeight: 1.1,
-                      top: `${positions.nameTop}px`,
+                      top: `${positions.nameTop - 20}px`,
                       left: `${positions.nameLeft}px`
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: `${fontSizes.nameLabel}pt`,
+                        fontFamily: 'Acumin Pro',
+                        color: '#111111',
+                        display: 'inline-block',
+                        transform: 'scaleY(1.1)',
+                        transformOrigin: 'bottom'
+                      }}
+                    >
+                      Họ và tên / Full name:
+                    </span>
+                  </div>
+
+                  {/* Name value */}
+                  <div
+                    className="absolute text-[#ed3235]"
+                    style={{
+                      fontSize: `${fontSizes.name}pt`,
+                      fontWeight: 'bold',
+                      fontFamily: 'Acumin Pro',
+                      top: `${positions.nameTop}px`,
+                      left: `${positions.nameLeft}px`,
+                      display: 'inline-block',
+                      transform: 'scaleY(1.2)',
+                      transformOrigin: 'bottom'
                     }}
                   >
                     {employee.ho_va_ten}
                   </div>
 
-                  {/* Academic Title */}
+                  {/* Academic label */}
                   <div
-                    className="absolute flex items-center gap-1"
+                    className="absolute"
                     style={{
-                      top: `${positions.academicTop}px`,
+                      top: `${positions.academicTop - 6}px`,
                       left: `${positions.academicLeft}px`
                     }}
                   >
                     <span
-                      className="text-gray-700 font-normal whitespace-nowrap"
                       style={{
-                        fontSize: `${fontSizes.academicLabel * 1.33}px`,
-                        lineHeight: 1.1,
-                        fontFamily: 'Montserrat'
+                        fontSize: `${fontSizes.academicLabel}pt`,
+                        fontFamily: 'Acumin Pro',
+                        color: '#111111',
+                        display: 'inline-block',
+                        transform: 'scaleY(1.1)',
+                        transformOrigin: 'bottom'
                       }}
                     >
-                      Học hàm:
-                    </span>
-                    <span
-                      className="text-gray-800 font-semibold"
-                      style={{ fontSize: `${fontSizes.academic * 1.33}px`, lineHeight: 1.1 }}
-                    >
-                      {employee.hoc_ham || ''}
+                      HH & HV /
+                      <span style={{ fontSize: `${fontSizes.academicLabel * 0.85}pt` }}>
+                        {' '}Academic title:
+                      </span>
                     </span>
                   </div>
 
-                  {/* Position */}
+                  {/* Academic value (DB) */}
                   <div
-                    className="absolute flex flex-col items-start"
+                    className="absolute text-[#111111]"
                     style={{
-                      top: `${positions.positionTop}px`,
+                      fontSize: `${fontSizes.academic}pt`,
+                      top: `${positions.academicTop + 12}px`,
+                      left: `${positions.academicLeft}px`,
+                      fontWeight: '600',
+                      fontFamily: 'Acumin Pro',
+                      display: 'inline-block',
+                      transform: 'scaleY(1.1)',
+                      transformOrigin: 'bottom'
+                    }}
+                  >
+                    {employee.hoc_ham || '--'}
+                  </div>
+
+                  {/* Position label */}
+                  <div
+                    className="absolute absolute text-[#111111]"
+                    style={{
+                      top: `${positions.positionTop + 7}px`,
                       left: `${positions.positionLeft}px`
                     }}
                   >
                     <span
-                      className="text-gray-700 font-normal whitespace-nowrap"
                       style={{
-                        fontSize: `${fontSizes.positionLabel * 1.33}px`,
-                        lineHeight: 1.1,
-                        fontFamily: 'Montserrat'
+                        fontSize: `${fontSizes.positionLabel}pt`,
+                        fontFamily: 'Acumin Pro',
+                        color: '#111111',
+                        display: 'inline-block',
+                        transform: 'scaleY(1.1)',
+                        transformOrigin: 'bottom'
                       }}
                     >
-                      Chức vụ:
-                    </span>
-                    <span
-                      className="text-gray-800 font-semibold"
-                      style={{ fontSize: `${fontSizes.position * 1.33}px`, lineHeight: 1.1 }}
-                    >
-                      {employee.ten_cong_viec || '--'}
+                      Chức vụ /
+                      <span style={{ fontSize: `${fontSizes.positionLabel * 0.85}pt` }}>
+                        {' '}Position:
+                      </span>
                     </span>
                   </div>
 
-                  {/* Unit */}
+                  {/* Position value (DB) */}
                   <div
-                    className="absolute flex flex-col items-start"
-                    style={{ top: `${positions.unitTop}px`, left: `${positions.unitLeft}px` }}
+                    className="absolute text-[#111111]"
+                    style={{
+                      fontSize: `${fontSizes.position}pt`,
+                      top: `${positions.positionTop + 25}px`,
+                      left: `${positions.positionLeft}px`,
+                      display: 'inline-block',
+                      transform: 'scaleY(1.1)',
+                      transformOrigin: 'bottom',
+                      fontWeight: '600',
+                      fontFamily: 'Acumin Pro'
+                    }}
+                  >
+                    {employee.ten_cong_viec || '--'}
+                  </div>
+
+                  {/* Unit label */}
+                  <div
+                    className="absolute text-[#111111]"
+                    style={{
+                      top: `${positions.unitTop + 8}px`,
+                      left: `${positions.unitLeft}px`
+                    }}
                   >
                     <span
-                      className="text-gray-700 font-normal whitespace-nowrap"
                       style={{
-                        fontSize: `${fontSizes.unitLabel * 1.33}px`,
-                        lineHeight: 1.1,
-                        fontFamily: 'Montserrat'
+                        fontSize: `${fontSizes.unitLabel}pt`,
+                        fontFamily: 'Acumin Pro',
+                        color: '#111111',
+                        display: 'inline-block',
+                        transform: 'scaleY(1.1)',
+                        transformOrigin: 'bottom',
                       }}
                     >
-                      Đơn vị:
+                      Đơn vị /
+                      <span style={{ fontSize: `${fontSizes.unitLabel * 0.85}pt` }}>
+                        {' '}Department:
+                      </span>
                     </span>
-                    <span
-                      className="text-gray-800 font-semibold"
-                      style={{ fontSize: `${fontSizes.unit * 1.33}px`, lineHeight: 1.1 }}
-                    >
-                      {employee.ten_don_vi || '--'}
-                    </span>
+                  </div>
+
+                  {/* Unit value (DB) */}
+                  <div
+                    className="absolute text-[#111111]"
+                    style={{
+                      fontSize: `${fontSizes.unit}pt`,
+                      top: `${positions.unitTop + 25}px`,
+                      left: `${positions.unitLeft}px`,
+                      fontWeight: '600',
+                      fontFamily: 'Acumin Pro',
+                      display: 'inline-block',
+                      transform: 'scaleY(1.1)'
+                    }}
+                  >
+                    {employee.ten_don_vi || '--'}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 w-full no-print">
-            <Button
-              variant="flat"
-              color="danger"
-              className="font-bold h-12"
-              startContent={<RefreshCw size={18} />}
-              onClick={handleReset}
-            >
-              Reset
-            </Button>
+          <div
+            className={cn(
+              "flex justify-center gap-2 w-full no-print",
+              !isStacked && "mt-auto"
+            )}
+          >
             <Button
               variant="flat"
               color="primary"
@@ -404,6 +508,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
             >
               PDF
             </Button>
+
             <Button
               color="primary"
               className="font-bold h-12 shadow-lg shadow-blue-500/20"
@@ -419,10 +524,23 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
       {/* Cột 2: Hình ảnh, thông tin trong thẻ */}
       <div className="flex-1 p-6 overflow-y-auto custom-scrollbar space-y-8 no-print bg-white dark:bg-gray-800">
         <div className="space-y-4">
-          <h4 className="text-sm font-bold text-blue-500 uppercase flex items-center gap-2">
-            <Camera size={16} /> Ảnh & Thông tin nền
-          </h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold text-blue-500 uppercase flex items-center gap-2">
+              <Camera size={16} />
+              Ảnh & Thông tin nền
+            </h4>
 
+            <Button
+              size="sm"
+              variant="flat"
+              color="danger"
+              className="font-semibold"
+              startContent={<RefreshCw size={14} />}
+              onClick={handleReset}
+            >
+              Reset
+            </Button>
+          </div>
           <div className="flex items-center gap-4 p-4 bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl border border-blue-100/50 dark:border-blue-800/20">
             <div className="w-16 h-20 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shrink-0 shadow-sm">
               {employee.avatar ? (

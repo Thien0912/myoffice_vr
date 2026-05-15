@@ -404,17 +404,6 @@ export default function DonViDemoPage({
           )
         },
         {
-          uid: 'ten_viet_tat',
-          name: 'Tên viết tắt',
-          sortable: true,
-          width: 150,
-          render: (_, row: any) => (
-            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
-              {renderEditableCell(row.ten_viet_tat, row, 'ten_viet_tat')}
-            </div>
-          )
-        },
-        {
           uid: 'ten_tieng_anh',
           name: 'Tên tiếng Anh',
           sortable: true,
@@ -468,17 +457,6 @@ export default function DonViDemoPage({
           render: (_, row: any) => (
             <div className="font-semibold text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
               {renderEditableCell(row.ten_trung_tam, row, 'ten_trung_tam')}
-            </div>
-          )
-        },
-        {
-          uid: 'ten_viet_tat',
-          name: 'Tên viết tắt',
-          sortable: true,
-          width: 150,
-          render: (_, row: any) => (
-            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
-              {renderEditableCell(row.ten_viet_tat, row, 'ten_viet_tat')}
             </div>
           )
         },

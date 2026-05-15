@@ -27,10 +27,11 @@ export default function FormBaoMat({ formData, setFormData }: FormBaoMatProps) {
 
                 <div>
                     <InputFloatingLabel
-                        label="Màu sắc (Class)"
+                        label="Màu sắc"
                         name="class_color"
                         value={formData.class_color || ''}
                         onChange={(val) => handleChange('class_color', val)}
+                        placeholder="VD: base-green, base-yellow, base-red hoặc #FF0000"
                     />
                 </div>
             </div>

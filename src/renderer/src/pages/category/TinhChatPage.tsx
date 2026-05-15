@@ -308,9 +308,9 @@ export default function TinhChatPage() {
             },
             {
                 uid: 'class_color',
-                name: 'Màu sắc (Class)',
+                name: 'Màu sắc',
                 sortable: true,
-                width: 200,
+                width: 100,
                 render: (_, row: any) => {
                     const isEditing =
                         editingCell?.id === row.id_tinh_chat && editingCell?.column === 'class_color'
@@ -330,7 +330,7 @@ export default function TinhChatPage() {
                             onBlur={handleFinishEdit}
                             classNames={{ input: 'text-sm' }}
                         />
-                    ) : (
+                    )             : (
                         <div
                             className={`cursor-pointer hover:text-blue-600 transition-colors ${!row.class_color ? 'text-gray-400 italic' : ''}`}
                             onDoubleClick={() =>
@@ -342,9 +342,20 @@ export default function TinhChatPage() {
                             }
                             title="Double click để sửa"
                         >
-                            <div className='flex items-center gap-2'>
-                                {row.class_color && <span className={`inline-block w-4 h-4 rounded-full ${row.class_color.replace('text-', 'bg-')}`}></span>}
-                                <span>{row.class_color || '--'}</span>
+                            <div className='flex items-center'>
+                                {row.class_color ? (
+                                    <span 
+                                        className="inline-block w-5 h-5 rounded-full border border-gray-300" 
+                                        style={{ 
+                                            backgroundColor: row.class_color === 'base-green' ? '#22c55e' 
+                                                : row.class_color === 'base-yellow' ? '#eab308'
+                                                : row.class_color === 'base-red' ? '#ef4444'
+                                                : row.class_color
+                                        }}
+                                    ></span>
+                                ) : (
+                                    <span className="text-gray-400 text-sm">--</span>
+                                )}
                             </div>
                         </div>
                     )

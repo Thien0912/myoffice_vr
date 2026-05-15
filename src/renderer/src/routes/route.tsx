@@ -376,7 +376,7 @@ export const ROUTES = [
                 path: undefined,
                 hide: false,
                 icon: Cog,
-                permission: ['nguoidung'],
+                permission: false,
                 children: [
                     {
                         title: 'Quản lý người dùng',
@@ -396,6 +396,15 @@ export const ROUTES = [
                         children: []
                     },
                     {
+                        title: 'Quản lý vai trò (Clone)',
+                        description: 'Bản sao quản lý vai trò hệ thống',
+                        path: 'he-thong/vai-tro-clone',
+                        hide: false,
+                        permission: false,
+                        Component: lazy(() => import('@renderer/pages/system/roles_clone/RolePage')),
+                        children: []
+                    },
+                    {
                         title: 'Báo cáo đăng nhập',
                         description: 'Thống kê lượt truy cập và hoạt động người dùng hệ thống',
                         path: 'he-thong/bao-cao-dang-nhap',
@@ -409,6 +418,7 @@ export const ROUTES = [
                         description: 'Theo dõi toàn bộ các thao tác, thay đổi dữ liệu trong hệ thống',
 
                         path: 'he-thong/nhat-ky',
+                        hide: true,
                         permission: false,
                         Component: lazy(() => import('@renderer/pages/system/logs/SystemLogPage')),
                         children: []
