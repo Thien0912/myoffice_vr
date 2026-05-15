@@ -15,6 +15,7 @@ import CaLamViecPage from './CaLamViecPage'
 import { caLamViecAxios } from '@renderer/api/danhmuc/caLamViecAxios'
 import { Briefcase, Building2, CircleOff, FileText, Layers, ShieldCheck, Building, Tags, Clock, GraduationCap } from 'lucide-react'
 
+<<<<<<< Updated upstream
 import HinhThucPage from './HinhThucPage'
 import { hinhthucAxios } from '@renderer/api/danhmuc/hinhthucAxios'
 import TinhChatPage from './TinhChatPage'
@@ -34,6 +35,15 @@ const PlaceholderTable = ({ title = 'Bảng' }: { title?: string }) => (
         <h1 className="text-5xl font-bold text-black">{title}</h1>
     </div>
 )
+=======
+// Import cho các danh mục đơn vị mới
+import DonViDemoPage from './DonViDemoPage'
+import { PhongBanAxios, TrungTamAxios, TruongAxios, KhoaAxios } from './mockApi'
+import FormPhongBan from './components/FormPhongBan'
+import FormTrungTam from './components/FormTrungTam'
+import FormKhoa from './components/FormKhoa'
+import { useQuery } from '@tanstack/react-query'
+>>>>>>> Stashed changes
 
 export default function DanhmucPage() {
     const { user } = useAuthStore()
@@ -89,6 +99,135 @@ export default function DanhmucPage() {
     // Fetch counts for sidebar items
     const countQueries = useQueries({
         queries: [
+<<<<<<< Updated upstream
+=======
+            // Counts cho các danh mục đơn vị
+            { queryKey: ['count', 'phongban'], queryFn: async () => { const res = await PhongBanAxios.fetch({ length: 1 }); return res?.recordsTotal || 0 }, staleTime: 30000 },
+            { queryKey: ['count', 'trungtam'], queryFn: async () => { const res = await TrungTamAxios.fetch({ length: 1 }); return res?.recordsTotal || 0 }, staleTime: 30000 },
+        ]
+    })
+
+    // Fetch danh sách trường để hiển thị submenu
+    const { data: truongListRaw, error: truongError } = useQuery({
+        queryKey: ['truong', 'list'],
+        queryFn: async () => {
+            const res = await TruongAxios.fetch({ length: 1000 }) // Lấy tất cả trường
+            console.log('Truong API response:', res)
+            return res?.data || []
+        },
+        staleTime: 60000
+    })
+
+    // Loại bỏ duplicate trường dựa trên id_truong
+    const truongList = useMemo(() => {
+        if (!truongListRaw) return []
+        const seen = new Set()
+        return truongListRaw.filter((truong: any) => {
+            const id = String(truong.id_truong)
+            if (seen.has(id)) return false
+            seen.add(id)
+            return true
+        })
+    }, [truongListRaw])
+
+    // Fetch danh sách khoa để tính số khoa cho mỗi trường
+    const { data: khoaList, error: khoaError } = useQuery({
+        queryKey: ['khoa', 'all'],
+        queryFn: async () => {
+            const res = await KhoaAxios.fetch({ length: 10000 }) // Lấy tất cả khoa
+            console.log('Khoa API response:', res)
+            return res?.data || []
+        },
+        staleTime: 60000
+    })
+
+    // Log errors nếu có
+    if (truongError) console.error('Truong fetch error:', truongError)
+    if (khoaError) console.error('Khoa fetch error:', khoaError)
+
+    // Loại bỏ duplicate khoa dựa trên id_khoa
+    const uniqueKhoaList = useMemo(() => {
+        if (!khoaList) return []
+        const seen = new Set()
+        return khoaList.filter((khoa: any) => {
+            const id = String(khoa.id_khoa)
+            if (seen.has(id)) return false
+            seen.add(id)
+            return true
+        })
+    }, [khoaList])
+
+    // Tính số khoa cho mỗi trường
+    const khoaCountByTruong = useMemo(() => {
+        const counts: Record<string, number> = {}
+        uniqueKhoaList.forEach((khoa: any) => {
+            // Bỏ qua khoa không có id_truong
+            if (!khoa.id_truong) return
+            const truongId = String(khoa.id_truong)
+            counts[truongId] = (counts[truongId] || 0) + 1
+        })
+        return counts
+    }, [uniqueKhoaList])
+
+    // Tính số khoa không có trường
+    const khoaNoTruongCount = useMemo(() => {
+        return uniqueKhoaList.filter((khoa: any) => !khoa.id_truong).length
+    }, [uniqueKhoaList])
+
+    const counts = useMemo(() => {
+        const phongban = countQueries[0].data ?? 0
+        const trungtam = countQueries[1].data ?? 0
+        const totalKhoa = uniqueKhoaList.length // Tổng số khoa của tất cả trường (đã loại bỏ duplicate)
+        
+        return {
+            donvi: phongban + trungtam + khoaNoTruongCount + totalKhoa, // Tổng = Phòng ban + Trung tâm + Khoa (không trường) + Tổng khoa trong trường
+            phongban,
+            trungtam,
+            khoa: khoaNoTruongCount, // Chỉ đếm khoa không có trường
+            truong: totalKhoa - khoaNoTruongCount, // Tổng Trường = tổng số khoa thuộc các trường (loại trừ khoa không có trường)
+        }
+    }, [countQueries, uniqueKhoaList, khoaNoTruongCount])
+
+    const items = useMemo(() => {
+        // Debug
+        console.log('Debug counts:', { khoaListLength: khoaList?.length, uniqueKhoaListLength: uniqueKhoaList?.length, khoaCountByTruong, truongListLength: truongList?.length })
+        
+        // Tạo danh sách children cho "Trường" - các trường từ API với số khoa
+        // Lọc bỏ trường không có id_truong
+        const validTruongList = truongList?.filter((truong: any) => truong.id_truong != null) || []
+        
+        const truongChildren = validTruongList.map((truong: any) => {
+            const truongId = String(truong.id_truong)
+            const count = khoaCountByTruong[truongId] || 0
+            console.log(`Trường ${truong.ten_truong} (id: ${truongId}): count = ${count}`)
+            return {
+                id: `donvi_truong_${truong.id_truong}`,
+                label: truong.ma_truong || truong.ten_truong,
+                count: count,
+                parentId: 'donvi_truong_group',
+                loai: 'TRUONG_KHOA',
+                truongData: truong
+            }
+        })
+
+        // Tạo danh sách children cho Danh mục đơn vị: Phòng ban, Trung tâm, Trường (có sub-children), Khoa
+        const donviChildren = [
+            { id: 'donvi_phongban', label: 'Phòng ban', count: counts.phongban, parentId: 'donvi', loai: 'PHONG_BAN' },
+            { id: 'donvi_trungtam', label: 'Trung tâm', count: counts.trungtam, parentId: 'donvi', loai: 'TRUNG_TAM' },
+            { 
+                id: 'donvi_truong_group', 
+                label: 'Trường', 
+                count: counts.truong, 
+                parentId: 'donvi', 
+                loai: 'TRUONG_GROUP',
+                children: truongChildren
+            },
+            { id: 'donvi_khoa', label: 'Khoa', count: counts.khoa, parentId: 'donvi', loai: 'KHOA' },
+        ]
+        
+        // Item cha "Danh mục đơn vị"
+        const all = [
+>>>>>>> Stashed changes
             {
                 queryKey: ['count', 'donvi'],
                 queryFn: async () => {

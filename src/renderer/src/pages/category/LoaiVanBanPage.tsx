@@ -9,7 +9,7 @@
   Select,
   SelectItem
 } from '@heroui/react'
-import { loaivanbanAxios } from '@renderer/api/danhmuc/loaiVanbanAxios'
+import { loaivanbanAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -20,11 +20,13 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useLoaiVanBanStore } from '@renderer/store/useLoaiVanBanStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { ModalCommon } from '@renderer/components/ModalCommon'
 import { SelectDropdown } from '@renderer/components/SelectDropdown'
 import FormLoaiVanBan from './components/FormLoaiVanBan'
-import { DonviAxios, mapDonviOptions } from '@renderer/api/danhmuc/DonviAxios'
+import { DonviAxios, mapDonviOptions } from './mockApi'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function LoaiVanBanPage() {
   const {
@@ -79,6 +81,8 @@ export default function LoaiVanBanPage() {
     onClose: onCloseDrawerEdit,
     onOpen: onOpenDrawerEdit
   } = useDisclosure()
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   const {
     data: responseData,
@@ -537,6 +541,51 @@ export default function LoaiVanBanPage() {
               onChange={(val) => setFilters({ selectedClassify: val as string, page: 1 })}
               className="w-full md:max-w-[200px]"
             />
+<<<<<<< Updated upstream
+=======
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {canCopy && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleCopyRows}
+              >
+                Sao chép
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleOpenEdit}
+              >
+                Sửa
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleDelete}
+              >
+                Xóa
+              </Button>
+            )}
+            <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+            {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+            <HrPrimaryButton
+              startContent={<Plus size={18} />}
+              className="px-4"
+              onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+            >
+              Thêm mới
+            </HrPrimaryButton>
+>>>>>>> Stashed changes
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -578,7 +627,7 @@ export default function LoaiVanBanPage() {
           onPinColumn={setPinnedColumn}
         />
 
-        <DrawerCommon
+        <ModalCommon
           title="Thêm loại văn bản"
           open={isOpenDrawerAdd}
           onClose={() => {
@@ -587,7 +636,7 @@ export default function LoaiVanBanPage() {
               thuoc_nhom: 'BGH'
             })
           }}
-          handleSubmitApi={(_id, data) => loaivanbanAxios.create(data!)}
+          handleSubmitApi={(_id, data) => loaivanbanAxios.create(Object.fromEntries(data!))}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -596,9 +645,9 @@ export default function LoaiVanBanPage() {
           }}
         >
           <FormLoaiVanBan formData={formData} setFormData={setFormData} isEdit={false} />
-        </DrawerCommon>
+        </ModalCommon>
 
-        <DrawerCommon
+        <ModalCommon
           title="Sửa loại văn bản"
           open={isOpenDrawerEdit}
           onClose={() => {
@@ -607,7 +656,7 @@ export default function LoaiVanBanPage() {
               thuoc_nhom: 'BGH'
             })
           }}
-          handleSubmitApi={(_id, data) => loaivanbanAxios.update(String(editingId), data!)}
+          handleSubmitApi={(_id, data) => loaivanbanAxios.update(String(editingId), Object.fromEntries(data!))}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -615,7 +664,7 @@ export default function LoaiVanBanPage() {
           }}
         >
           <FormLoaiVanBan formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </ModalCommon>
       </div>
 
       <TablePagination
@@ -645,8 +694,9 @@ export default function LoaiVanBanPage() {
         onConfirm={handleSaveEdit}
         title="Xác nhận sửa đổi"
         content="Bạn có chắc chắn muốn lưu thay đổi này không?"
-        isDanger={false}
-      />
-    </div>
+                isDanger={false}
+            />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="loaivanban" />
+        </div>
   )
 }

@@ -48,12 +48,10 @@ export function DrawerCommon({
     const form = e.currentTarget as HTMLFormElement
     const fd = new FormData(form)
 
-    // 1️⃣ Append files
     Object.entries(fileGroups).forEach(([fieldName, files]) => {
       files.forEach((f) => fd.append(fieldName, f))
     })
 
-    // 2️⃣ Append formData
     Object.entries(formData ?? {}).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value) || typeof value === 'object') {
@@ -75,9 +73,11 @@ export function DrawerCommon({
           })
           onSubmitSuccess?.(response)
         } else {
-          const errorMessage = Object.values(response.error).flat().join(',')
+          const errorMessage = response.error
+            ? Object.values(response.error).flat().join(',')
+            : response.message || 'Gửi dữ liệu thất bại. Vui lòng thử lại.'
           toast('Lỗi', {
-            description: errorMessage || 'Gửi dữ liệu thất bại. Vui lòng thử lại.',
+            description: errorMessage,
             variant: 'danger',
             timeout: 5000
           })

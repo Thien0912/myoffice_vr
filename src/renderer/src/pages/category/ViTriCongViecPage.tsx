@@ -1,5 +1,5 @@
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { vitricongviecAxios } from '@renderer/api/danhmuc/vitricongviecAxios'
+import { vitricongviecAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,9 +10,11 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useViTriCongViecStore } from '@renderer/store/useViTriCongViecStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { ModalCommon } from '@renderer/components/ModalCommon'
 import FormViTriCongViec from './components/FormViTriCongViec'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function ViTriCongViecPage() {
   const {
@@ -65,10 +67,12 @@ export default function ViTriCongViecPage() {
   const {
     isOpen: isOpenDrawerEdit,
     onClose: onCloseDrawerEdit,
-    onOpen: onOpenDrawerEdit
-  } = useDisclosure()
+        onOpen: onOpenDrawerEdit
+    } = useDisclosure()
 
-  const {
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+
+    const {
     data: responseData,
     isLoading: isLoading,
     refetch,
@@ -340,6 +344,51 @@ export default function ViTriCongViecPage() {
               endContent={isFetching && <Spinner size="sm" />}
             />
 
+<<<<<<< Updated upstream
+=======
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {canCopy && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleCopyRows}
+              >
+                Sao chép
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleOpenEdit}
+              >
+                Sửa
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleDelete}
+              >
+                                Xóa
+                            </Button>
+                        )}
+                        <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+                        {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+            <HrPrimaryButton
+              startContent={<Plus size={18} />}
+              className="px-4"
+              onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+            >
+              Thêm mới
+            </HrPrimaryButton>
+>>>>>>> Stashed changes
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -380,14 +429,14 @@ export default function ViTriCongViecPage() {
           onPinColumn={setPinnedColumn}
         />
 
-        <DrawerCommon
+        <ModalCommon
           title="Thêm vị trí công việc"
           open={isOpenDrawerAdd}
           onClose={() => {
             onCloseDrawerAdd()
             setFormData({})
           }}
-          handleSubmitApi={(_id, data) => vitricongviecAxios.create(data!)}
+          handleSubmitApi={(_id, data) => vitricongviecAxios.create(Object.fromEntries(data!))}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -395,16 +444,16 @@ export default function ViTriCongViecPage() {
           }}
         >
           <FormViTriCongViec formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </ModalCommon>
 
-        <DrawerCommon
+        <ModalCommon
           title="Sửa vị trí công việc"
           open={isOpenDrawerEdit}
           onClose={() => {
             onCloseDrawerEdit()
             setFormData({})
           }}
-          handleSubmitApi={(_id, data) => vitricongviecAxios.update(String(editingId), data!)}
+          handleSubmitApi={(_id, data) => vitricongviecAxios.update(String(editingId), Object.fromEntries(data!))}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -412,7 +461,7 @@ export default function ViTriCongViecPage() {
           }}
         >
           <FormViTriCongViec formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </ModalCommon>
       </div>
 
       <TablePagination
@@ -442,8 +491,9 @@ export default function ViTriCongViecPage() {
         onConfirm={handleSaveEdit}
         title="Xác nhận sửa đổi"
         content="Bạn có chắc chắn muốn lưu thay đổi này không?"
-        isDanger={false}
-      />
-    </div>
+                isDanger={false}
+            />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="vitricongviec" />
+        </div>
   )
 }

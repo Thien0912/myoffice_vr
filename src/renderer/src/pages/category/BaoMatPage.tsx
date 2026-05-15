@@ -1,5 +1,5 @@
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { baomatAxios } from '@renderer/api/danhmuc/baomatAxios'
+import { baomatAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,9 +10,11 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useBaoMatStore } from '@renderer/store/useBaoMatStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { ModalCommon } from '@renderer/components/ModalCommon'
 import FormBaoMat from './components/FormBaoMat'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function BaoMatPage() {
     const {
@@ -67,6 +69,8 @@ export default function BaoMatPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
     const {
         data: responseData,
@@ -348,6 +352,58 @@ export default function BaoMatPage() {
                             endContent={isFetching && <Spinner size="sm" />}
                         />
 
+<<<<<<< Updated upstream
+=======
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                        {canCopy && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleCopyRows}
+                            >
+                                Sao chép
+                            </Button>
+                        )}
+                        {canEdit && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleOpenEdit}
+                            >
+                                Sửa
+                            </Button>
+                        )}
+                        {canDelete && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleDelete}
+                            >
+                                Xóa
+                            </Button>
+                        )}
+                        <Button
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 font-medium"
+                            onPress={() => setIsHistoryOpen(true)}
+                        >
+                            Lịch sử
+                        </Button>
+                        {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+                        <HrPrimaryButton
+                            startContent={<Plus size={18} />}
+                            className="px-4"
+                            onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+                        >
+                            Thêm mới
+                        </HrPrimaryButton>
+>>>>>>> Stashed changes
                         <TableColumnVisibility
                             columns={allColumns}
                             visibleColumns={new Set(filters.initial_visible_columns)}
@@ -388,14 +444,14 @@ export default function BaoMatPage() {
                     onPinColumn={setPinnedColumn}
                 />
 
-                <DrawerCommon
+                <ModalCommon
                     title="Thêm mức độ bảo mật"
                     open={isOpenDrawerAdd}
                     onClose={() => {
                         onCloseDrawerAdd()
                         setFormData({})
                     }}
-                    handleSubmitApi={(_id, data) => baomatAxios.create(data!)}
+                    handleSubmitApi={(_id, data) => baomatAxios.create(Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
                         refetch()
@@ -403,16 +459,16 @@ export default function BaoMatPage() {
                     }}
                 >
                     <FormBaoMat formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
 
-                <DrawerCommon
+                <ModalCommon
                     title="Sửa mức độ bảo mật"
                     open={isOpenDrawerEdit}
                     onClose={() => {
                         onCloseDrawerEdit()
                         setFormData({})
                     }}
-                    handleSubmitApi={(_id, data) => baomatAxios.update(String(editingId), data!)}
+                    handleSubmitApi={(_id, data) => baomatAxios.update(String(editingId), Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
                         refetch()
@@ -420,7 +476,7 @@ export default function BaoMatPage() {
                     }}
                 >
                     <FormBaoMat formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
             </div>
 
             <TablePagination
@@ -452,6 +508,7 @@ export default function BaoMatPage() {
                 content="Bạn có chắc chắn muốn lưu thay đổi này không?"
                 isDanger={false}
             />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="baomat" />
         </div>
     )
 }

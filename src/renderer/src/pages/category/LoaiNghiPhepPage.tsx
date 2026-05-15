@@ -1,5 +1,10 @@
+<<<<<<< Updated upstream
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider, Chip } from '@heroui/react'
 import { LoaiNghiPhepAxios } from '@renderer/api/danhmuc/loaiNghiPhepAxios'
+=======
+﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
+import { LoaiNghiPhepAxios } from './mockApi'
+>>>>>>> Stashed changes
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,9 +15,11 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useLoaiNghiPhepStore } from '@renderer/store/useLoaiNghiPhepStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { ModalCommon } from '@renderer/components/ModalCommon'
 import FormLoaiNghiPhep from './components/FormLoaiNghiPhep'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function LoaiNghiPhepPage() {
     const {
@@ -50,6 +57,8 @@ export default function LoaiNghiPhepPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
     const {
         data: responseData,
@@ -257,6 +266,51 @@ export default function LoaiNghiPhepPage() {
                             endContent={isFetching && <Spinner size="sm" />}
                         />
 
+<<<<<<< Updated upstream
+=======
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                        {canCopy && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleCopyRows}
+                            >
+                                Sao chép
+                            </Button>
+                        )}
+                        {canEdit && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleOpenEdit}
+                            >
+                                Sửa
+                            </Button>
+                        )}
+                        {canDelete && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleDelete}
+                            >
+                                Xóa
+                            </Button>
+                        )}
+                        <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+                        {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+                        <HrPrimaryButton
+                            startContent={<Plus size={18} />}
+                            className="px-4"
+                            onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+                        >
+                            Thêm mới
+                        </HrPrimaryButton>
+>>>>>>> Stashed changes
                         <TableColumnVisibility
                             columns={allColumns}
                             visibleColumns={new Set(filters.initial_visible_columns)}
@@ -297,14 +351,14 @@ export default function LoaiNghiPhepPage() {
                     onPinColumn={setPinnedColumn}
                 />
 
-                <DrawerCommon
+                <ModalCommon
                     title="Thêm loại nghỉ phép"
                     open={isOpenDrawerAdd}
                     onClose={() => {
                         onCloseDrawerAdd()
                         setFormData({})
                     }}
-                    handleSubmitApi={(_id, data) => LoaiNghiPhepAxios.create(data!)}
+                    handleSubmitApi={(_id, data) => LoaiNghiPhepAxios.create(Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
                         refetch()
@@ -312,16 +366,16 @@ export default function LoaiNghiPhepPage() {
                     }}
                 >
                     <FormLoaiNghiPhep formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
 
-                <DrawerCommon
+                <ModalCommon
                     title="Sửa loại nghỉ phép"
                     open={isOpenDrawerEdit}
                     onClose={() => {
                         onCloseDrawerEdit()
                         setFormData({})
                     }}
-                    handleSubmitApi={(_id, data) => LoaiNghiPhepAxios.update(String(editingId), data!)}
+                    handleSubmitApi={(_id, data) => LoaiNghiPhepAxios.update(String(editingId), Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
                         refetch()
@@ -329,7 +383,7 @@ export default function LoaiNghiPhepPage() {
                     }}
                 >
                     <FormLoaiNghiPhep formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
             </div>
 
             <TablePagination
@@ -349,6 +403,7 @@ export default function LoaiNghiPhepPage() {
                 content="Bạn có chắc chắn muốn xóa loại nghỉ phép này không? Hành động này không thể hoàn tác."
                 isDanger={true}
             />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="loainghiphep" />
         </div>
     )
 }

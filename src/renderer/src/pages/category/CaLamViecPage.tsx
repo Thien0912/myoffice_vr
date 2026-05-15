@@ -1,5 +1,5 @@
 import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { caLamViecAxios } from '@renderer/api/danhmuc/caLamViecAxios'
+import { caLamViecAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,9 +10,11 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useCaLamViecStore } from '@renderer/store/useCaLamViecStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { ModalCommon } from '@renderer/components/ModalCommon'
 import FormCaLamViec from './components/FormCaLamViec'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from '@heroui-v3/react'
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function CaLamViecPage() {
   const {
@@ -67,6 +69,8 @@ export default function CaLamViecPage() {
     onClose: onCloseDrawerEdit,
     onOpen: onOpenDrawerEdit
   } = useDisclosure()
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   const {
     data: responseData,
@@ -326,6 +330,51 @@ export default function CaLamViecPage() {
               endContent={isFetching && <Spinner size="sm" />}
             />
 
+<<<<<<< Updated upstream
+=======
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {canCopy && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleCopyRows}
+              >
+                Sao chép
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleOpenEdit}
+              >
+                Sửa
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleDelete}
+              >
+                Xóa
+              </Button>
+            )}
+            <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+            {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+            <HrPrimaryButton
+              startContent={<Plus size={18} />}
+              className="px-4"
+              onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+            >
+              Thêm mới
+            </HrPrimaryButton>
+>>>>>>> Stashed changes
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -366,14 +415,14 @@ export default function CaLamViecPage() {
           onPinColumn={setPinnedColumn}
         />
 
-        <DrawerCommon
+        <ModalCommon
           title="Thêm ca làm việc"
           open={isOpenDrawerAdd}
           onClose={() => {
             onCloseDrawerAdd()
             setFormData({})
           }}
-          handleSubmitApi={(_id, data) => caLamViecAxios.create(data!)}
+          handleSubmitApi={(_id, data) => caLamViecAxios.create(Object.fromEntries(data!))}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -381,16 +430,16 @@ export default function CaLamViecPage() {
           }}
         >
           <FormCaLamViec formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </ModalCommon>
 
-        <DrawerCommon
+        <ModalCommon
           title="Sửa ca làm việc"
           open={isOpenDrawerEdit}
           onClose={() => {
             onCloseDrawerEdit()
             setFormData({})
           }}
-          handleSubmitApi={(_id, data) => caLamViecAxios.update(String(editingId), data!)}
+          handleSubmitApi={(_id, data) => caLamViecAxios.update(String(editingId), Object.fromEntries(data!))}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -398,7 +447,7 @@ export default function CaLamViecPage() {
           }}
         >
           <FormCaLamViec formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </ModalCommon>
       </div>
 
       <TablePagination
@@ -430,6 +479,25 @@ export default function CaLamViecPage() {
         content="Bạn có chắc chắn muốn lưu thay đổi này không?"
         isDanger={false}
       />
+<<<<<<< Updated upstream
+=======
+      <ConfirmModal
+        isOpen={isOpenConfirm}
+        onClose={() => {
+          onCloseConfirm()
+          setDeletingId(null)
+        }}
+        onConfirm={onConfirmDelete}
+        title="Xác nhận xóa"
+        content={
+          Array.isArray(deletingId)
+            ? `Bạn có chắc chắn muốn xóa ${deletingId.length} ca làm việc đã chọn không? Hành động này không thể hoàn tác.`
+            : 'Bạn có chắc chắn muốn xóa ca làm việc này không? Hành động này không thể hoàn tác.'
+        }
+        isDanger={true}
+      />
+      <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="calamviec" />
+>>>>>>> Stashed changes
     </div>
   )
 }

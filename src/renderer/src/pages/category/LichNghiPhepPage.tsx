@@ -1,4 +1,4 @@
-import { ngayleAxios } from '@renderer/api/admin/ngayleAxios';
+import { ngayleAxios } from './mockApi';
 import LunarDateRangePicker, { solarToLunarStr } from '@renderer/components/LunarDateRangePicker';
 import { HrPrimaryButton } from '@renderer/components/hero-custom';
 import { useNgoaiGioPermissions } from '@renderer/pages/hr/overtime/hooks/useNgoaiGioPermissions';
@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
+import HistoryDrawer from './components/HistoryDrawer'
 import { getLunarDate } from '@forvn/vn-lunar-calendar';
 
 /* ── lunar helper for calendar grid ──────────────────────────────────────── */
@@ -66,6 +67,7 @@ const LichNghiPhepPage = () => {
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const queryClient = useQueryClient();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   /* ── queries ── */
   const { data: qData, isLoading } = useQuery({
@@ -263,6 +265,12 @@ const LichNghiPhepPage = () => {
                 Tạo mới
               </HrPrimaryButton>
             )}
+            <HrPrimaryButton
+              onPress={() => setIsHistoryOpen(true)}
+              className="w-full sm:w-auto ml-2"
+            >
+              Lịch sử
+            </HrPrimaryButton>
           </div>
         </header>
 
@@ -523,6 +531,7 @@ const LichNghiPhepPage = () => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
+      <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="ngayle" />
     </div>
   );
 };

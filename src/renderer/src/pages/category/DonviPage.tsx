@@ -1,5 +1,5 @@
 ﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider, Select, SelectItem } from '@heroui/react'
-import { DonviAxios } from '@renderer/api/danhmuc/DonviAxios'
+import { DonviAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,11 +10,21 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useDonviStore } from '@renderer/store/useDonviStore'
+<<<<<<< Updated upstream
 import { DrawerCommon } from '@renderer/components/DrawerCommon'
+=======
+import { useAuthStore } from '@renderer/store/useAuthStore'
+import { ModalCommon } from '@renderer/components/ModalCommon'
+>>>>>>> Stashed changes
 import { SelectDropdown } from '@renderer/components/SelectDropdown'
 import FormDonvi from './components/FormDonvi'
 import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
+<<<<<<< Updated upstream
+=======
+import HistoryDrawer from './components/HistoryDrawer'
+import { LOAI_DON_VI_DANH_MUC } from '@renderer/api/danhmuc/DonviAxios'
+>>>>>>> Stashed changes
 
 export default function DonviPage() {
   const {
@@ -69,6 +79,8 @@ export default function DonviPage() {
     onOpen: onOpenConfirmEdit,
     onClose: onCloseConfirmEdit
   } = useDisclosure()
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   const {
     data: responseData,
@@ -536,6 +548,7 @@ export default function DonviPage() {
               classNames={{ inputWrapper: 'h-10 bg-white border border-gray-200 rounded-md' }}
               endContent={isFetching && <Spinner size="sm" />}
             />
+<<<<<<< Updated upstream
             <SelectDropdown
               label="Loại đơn vị"
               options={[
@@ -549,6 +562,67 @@ export default function DonviPage() {
               onChange={(val) => setFilters({ selectedClassify: val as string, page: 1 })}
               className="w-full md:max-w-[200px]"
             />
+=======
+            {!loaiDonVi && (
+              <SelectDropdown
+                label="Loại đơn vị"
+                options={[
+                  { value: 'all', label: 'Tất cả loại' },
+                  ...Object.entries(UNIT_TYPE_LABELS).map(([key, label]) => ({
+                    value: key,
+                    label: label
+                  }))
+                ]}
+                value={filters.selectedClassify || 'all'}
+                onChange={(val) => setFilters({ selectedClassify: val as string, page: 1 })}
+                className="w-full md:max-w-[200px]"
+              />
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {canCopy && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleCopyRows}
+              >
+                Sao chép
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleOpenEdit}
+              >
+                Sửa
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="light"
+                size="sm"
+                className="text-gray-600 font-medium"
+                onPress={handleDelete}
+              >
+                Xóa
+              </Button>
+            )}
+            <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+            {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+            {canCreate && (
+              <HrPrimaryButton
+                startContent={<Plus size={18} />}
+                className="px-4"
+                onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+              >
+                Thêm mới
+              </HrPrimaryButton>
+            )}
+>>>>>>> Stashed changes
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -587,14 +661,28 @@ export default function DonviPage() {
           onPinColumn={setPinnedColumn}
         />
 
+<<<<<<< Updated upstream
         <DrawerCommon
           title="Thêm đơn vị"
+=======
+        <ModalCommon
+          title={loaiDonVi ? `Thêm ${UNIT_TYPE_LABELS[loaiDonVi]?.toLowerCase() || 'đơn vị'}` : "Thêm đơn vị"}
+>>>>>>> Stashed changes
           open={isOpenDrawerAdd}
           onClose={() => {
             onCloseDrawerAdd()
             setFormData({})
           }}
+<<<<<<< Updated upstream
           handleSubmitApi={(_id, data) => DonviAxios.create(data!)}
+=======
+          handleSubmitApi={(_id, data) => {
+            // Tự động gán loại đơn vị nếu đang ở danh mục con
+            const plainData = Object.fromEntries(data!)
+            const submitData = loaiDonVi ? { ...plainData, loai: loaiDonVi } : plainData
+            return DonviAxios.create(submitData)
+          }}
+>>>>>>> Stashed changes
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -602,17 +690,22 @@ export default function DonviPage() {
             // onCloseDrawerAdd()
           }}
         >
+<<<<<<< Updated upstream
           <FormDonvi formData={formData} setFormData={setFormData} isEdit={false} />
         </DrawerCommon>
+=======
+          <FormDonvi formData={formData} setFormData={setFormData} isEdit={false} loaiDonVi={loaiDonVi} />
+        </ModalCommon>
+>>>>>>> Stashed changes
 
-        <DrawerCommon
+        <ModalCommon
           title="Sửa đơn vị"
           open={isOpenDrawerEdit}
           onClose={() => {
             onCloseDrawerEdit()
             setFormData({})
           }}
-          handleSubmitApi={(_id, data) => DonviAxios.update(String(editingId), data!)}
+          handleSubmitApi={(_id, data) => DonviAxios.update(String(editingId), Object.fromEntries(data!))}
           formData={formData}
           onSubmitSuccess={() => {
             refetch()
@@ -620,7 +713,7 @@ export default function DonviPage() {
           }}
         >
           <FormDonvi formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </ModalCommon>
       </div>
 
       <TablePagination
@@ -650,8 +743,9 @@ export default function DonviPage() {
         onConfirm={handleSaveEdit}
         title="Xác nhận sửa đổi"
         content="Bạn có chắc chắn muốn lưu thay đổi này không?"
-        isDanger={false}
-      />
-    </div>
+                isDanger={false}
+            />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="donvi" />
+        </div>
   )
 }

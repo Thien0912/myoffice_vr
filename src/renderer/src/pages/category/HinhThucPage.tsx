@@ -1,5 +1,5 @@
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { hinhthucAxios } from '@renderer/api/danhmuc/hinhthucAxios'
+import { hinhthucAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,9 +10,11 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useHinhThucStore } from '@renderer/store/useHinhThucStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { ModalCommon } from '@renderer/components/ModalCommon'
 import FormHinhThuc from './components/FormHinhThuc'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function HinhThucPage() {
     const {
@@ -67,6 +69,8 @@ export default function HinhThucPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
     const {
         data: responseData,
@@ -360,6 +364,49 @@ export default function HinhThucPage() {
                             endContent={isFetching && <Spinner size="sm" />}
                         />
 
+<<<<<<< Updated upstream
+=======
+                <div className="flex items-center gap-1.5">
+                    {canCopy && (
+                        <Button
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 font-medium"
+                            onPress={handleCopyRows}
+                        >
+                            Sao chép
+                        </Button>
+                    )}
+                    {canEdit && (
+                        <Button
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 font-medium"
+                            onPress={handleOpenEdit}
+                        >
+                            Sửa
+                        </Button>
+                    )}
+                    {canDelete && (
+                        <Button
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 font-medium"
+                            onPress={handleDelete}
+                        >
+                                Xóa
+                            </Button>
+                        )}
+                        <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+                        {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+                    <HrPrimaryButton
+                        startContent={<Plus size={18} />}
+                        className="px-4"
+                        onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+                    >
+                        Thêm mới
+                    </HrPrimaryButton>
+>>>>>>> Stashed changes
                         <TableColumnVisibility
                             columns={allColumns}
                             visibleColumns={new Set(filters.initial_visible_columns)}
@@ -400,14 +447,14 @@ export default function HinhThucPage() {
                     onPinColumn={setPinnedColumn}
                 />
 
-                <DrawerCommon
+                <ModalCommon
                     title="Thêm hình thức"
                     open={isOpenDrawerAdd}
                     onClose={() => {
                         onCloseDrawerAdd()
                         setFormData({})
                     }}
-                    handleSubmitApi={(_id, data) => hinhthucAxios.create(data!)}
+                    handleSubmitApi={(_id, data) => hinhthucAxios.create(Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
                         refetch()
@@ -415,16 +462,16 @@ export default function HinhThucPage() {
                     }}
                 >
                     <FormHinhThuc formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
 
-                <DrawerCommon
+                <ModalCommon
                     title="Sửa hình thức"
                     open={isOpenDrawerEdit}
                     onClose={() => {
                         onCloseDrawerEdit()
                         setFormData({})
                     }}
-                    handleSubmitApi={(_id, data) => hinhthucAxios.update(String(editingId), data!)}
+                    handleSubmitApi={(_id, data) => hinhthucAxios.update(String(editingId), Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
                         refetch()
@@ -432,7 +479,7 @@ export default function HinhThucPage() {
                     }}
                 >
                     <FormHinhThuc formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
             </div>
 
             <TablePagination
@@ -464,6 +511,7 @@ export default function HinhThucPage() {
                 content="Bạn có chắc chắn muốn lưu thay đổi này không?"
                 isDanger={false}
             />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="hinhthuc" />
         </div>
     )
 }

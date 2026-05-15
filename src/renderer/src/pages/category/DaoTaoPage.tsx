@@ -1,5 +1,10 @@
+<<<<<<< Updated upstream
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider, Chip } from '@heroui/react'
 import { daotaoAxios } from '@renderer/api/danhmuc/daotaoAxios'
+=======
+﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
+import { daotaoAxios } from './mockApi'
+>>>>>>> Stashed changes
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,10 +15,12 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useDaoTaoStore } from '@renderer/store/useDaoTaoStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { ModalCommon } from '@renderer/components/ModalCommon'
 import FormDaoTao from './components/FormDaoTao'
 import moment from 'moment'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
 import { toast } from "@heroui-v3/react";
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function DaoTaoPage() {
     const {
@@ -51,6 +58,8 @@ export default function DaoTaoPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
     const {
         data: responseData,
@@ -255,6 +264,54 @@ export default function DaoTaoPage() {
                             endContent={isFetching && <Spinner size="sm" />}
                         />
 
+<<<<<<< Updated upstream
+=======
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                        {canCopy && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleCopyRows}
+                            >
+                                Sao chép
+                            </Button>
+                        )}
+                        {canEdit && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleOpenEdit}
+                            >
+                                Sửa
+                            </Button>
+                        )}
+                        {canDelete && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleDelete}
+                            >
+                                Xóa
+                            </Button>
+                        )}
+                        <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+                        {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+                        <HrPrimaryButton
+                            startContent={<Plus size={18} />}
+                            className="px-4"
+                            onPress={() => {
+                                setFormData({ trang_thai: 'Dang_dien_ra' })
+                                onOpenDrawerAdd()
+                            }}
+                        >
+                            Thêm mới
+                        </HrPrimaryButton>
+>>>>>>> Stashed changes
                         <TableColumnVisibility
                             columns={allColumns}
                             visibleColumns={new Set(filters.initial_visible_columns)}
@@ -298,7 +355,7 @@ export default function DaoTaoPage() {
                     onPinColumn={setPinnedColumn}
                 />
 
-                <DrawerCommon
+                <ModalCommon
                     title="Thêm khóa đào tạo"
                     open={isOpenDrawerAdd}
                     onClose={() => {
@@ -313,9 +370,9 @@ export default function DaoTaoPage() {
                     }}
                 >
                     <FormDaoTao formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
 
-                <DrawerCommon
+                <ModalCommon
                     title="Sửa khóa đào tạo"
                     open={isOpenDrawerEdit}
                     onClose={() => {
@@ -330,7 +387,7 @@ export default function DaoTaoPage() {
                     }}
                 >
                     <FormDaoTao formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </ModalCommon>
             </div>
 
             <TablePagination
@@ -350,6 +407,7 @@ export default function DaoTaoPage() {
                 content="Bạn có chắc chắn muốn xóa khóa đào tạo này không? Hành động này không thể hoàn tác."
                 isDanger={true}
             />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="daotao" />
         </div>
     )
 }

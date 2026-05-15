@@ -1,5 +1,5 @@
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { coquanAxios } from '@renderer/api/danhmuc/coquanAxios'
+import { coquanAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,7 +10,14 @@ import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useCoQuanStore } from '@renderer/store/useCoQuanStore'
+<<<<<<< Updated upstream
+=======
+import { ModalCommon } from '@renderer/components/ModalCommon'
+import FormCoQuan from './components/FormCoQuan'
+import { HrPrimaryButton } from '@renderer/components/hero-custom'
+>>>>>>> Stashed changes
 import { toast } from "@heroui-v3/react";
+import HistoryDrawer from './components/HistoryDrawer'
 
 export default function CoQuanPage() {
     const {
@@ -54,6 +61,8 @@ export default function CoQuanPage() {
     // State for Quick Add
     const [newName, setNewName] = useState('')
     const [isAdding, setIsAdding] = useState(false)
+
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
     const {
         data: responseData,
@@ -302,6 +311,49 @@ export default function CoQuanPage() {
                             endContent={isFetching && <Spinner size="sm" />}
                         />
 
+<<<<<<< Updated upstream
+=======
+                    <div className="flex items-center gap-1.5">
+                        {canCopy && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleCopyRows}
+                            >
+                                Sao chép
+                            </Button>
+                        )}
+                        {canEdit && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleOpenEdit}
+                            >
+                                Sửa
+                            </Button>
+                        )}
+                        {canDelete && (
+                            <Button
+                                variant="light"
+                                size="sm"
+                                className="text-gray-600 font-medium"
+                                onPress={handleDelete}
+                            >
+                                Xóa
+                            </Button>
+                        )}
+                        <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={() => setIsHistoryOpen(true)}>Lịch sử</Button>
+                        {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+                        <HrPrimaryButton
+                            startContent={<Plus size={18} />}
+                            className="px-4"
+                            onPress={() => { setFormData({}); onOpenDrawerAdd() }}
+                        >
+                            Thêm mới
+                        </HrPrimaryButton>
+>>>>>>> Stashed changes
                         <TableColumnVisibility
                             columns={allColumns}
                             visibleColumns={new Set(filters.initial_visible_columns)}
@@ -365,6 +417,43 @@ export default function CoQuanPage() {
                     onColumnResize={setColumnWidth}
                     onPinColumn={setPinnedColumn}
                 />
+<<<<<<< Updated upstream
+=======
+
+                <ModalCommon
+                    title="Thêm cơ quan"
+                    open={isOpenDrawerAdd}
+                    onClose={() => {
+                        onCloseDrawerAdd()
+                        setFormData({})
+                    }}
+                    handleSubmitApi={(_id, data) => coquanAxios.create(Object.fromEntries(data!))}
+                    formData={formData}
+                    onSubmitSuccess={() => {
+                        refetch()
+                        setFormData({})
+                    }}
+                >
+                    <FormCoQuan formData={formData} setFormData={setFormData} />
+                </ModalCommon>
+
+                <ModalCommon
+                    title="Sửa cơ quan"
+                    open={isOpenDrawerEdit}
+                    onClose={() => {
+                        onCloseDrawerEdit()
+                        setFormData({})
+                    }}
+                    handleSubmitApi={(_id, data) => coquanAxios.update(String(editingId), Object.fromEntries(data!))}
+                    formData={formData}
+                    onSubmitSuccess={() => {
+                        refetch()
+                        setFormData({})
+                    }}
+                >
+                    <FormCoQuan formData={formData} setFormData={setFormData} />
+                </ModalCommon>
+>>>>>>> Stashed changes
             </div>
 
             <TablePagination
@@ -396,6 +485,7 @@ export default function CoQuanPage() {
                 content="Bạn có chắc chắn muốn lưu thay đổi này không?"
                 isDanger={false}
             />
+            <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} entityType="coquan" />
         </div>
     )
 }
