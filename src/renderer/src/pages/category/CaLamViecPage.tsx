@@ -1,16 +1,17 @@
 import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { caLamViecAxios } from '@renderer/api/danhmuc/caLamViecAxios'
+import { caLamViecAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { History, Plus, Search } from 'lucide-react'
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useCaLamViecStore } from '@renderer/store/useCaLamViecStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { CategoryModal } from './components/CategoryModal'
 import FormCaLamViec from './components/FormCaLamViec'
 import { toast } from '@heroui-v3/react'
 
@@ -63,11 +64,13 @@ export default function CaLamViecPage() {
     onOpen: onOpenDrawerAdd
   } = useDisclosure()
 
-  const {
-    isOpen: isOpenDrawerEdit,
-    onClose: onCloseDrawerEdit,
-    onOpen: onOpenDrawerEdit
-  } = useDisclosure()
+    const {
+        isOpen: isOpenDrawerEdit,
+        onClose: onCloseDrawerEdit,
+        onOpen: onOpenDrawerEdit
+    } = useDisclosure()
+
+    const [lichSuOpen, setLichSuOpen] = useState(false)
 
   const {
     data: responseData,
@@ -410,14 +413,23 @@ export default function CaLamViecPage() {
             )}
             {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
             <Button
-              color="primary"
-              size="sm"
-              startContent={<Plus size={18} />}
-              className="font-medium rounded-md px-4"
-              onPress={() => onOpenDrawerAdd()}
-            >
-              Thêm mới
-            </Button>
+                            variant="light"
+                            size="sm"
+                            startContent={<History size={16} />}
+                            className="text-gray-600 font-medium"
+                            onPress={() => setLichSuOpen(true)}
+                        >
+                            Lịch sử
+                        </Button>
+                        <Button
+                            color="primary"
+                            size="sm"
+                            startContent={<Plus size={18} />}
+                            className="font-medium rounded-md px-4"
+                            onPress={() => onOpenDrawerAdd()}
+                        >
+                            Thêm mới
+                        </Button>
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -444,13 +456,13 @@ export default function CaLamViecPage() {
           primaryKey="id"
         />
 
-        <DrawerCommon
-          title="Thêm ca làm việc"
-          open={isOpenDrawerAdd}
-          onClose={() => {
+        <CategoryModal
+          isOpen={isOpenDrawerAdd}
+          onOpenChange={(open) => { if (!open) {
             onCloseDrawerAdd()
             setFormData({})
-          }}
+          } }}
+          title="Thêm ca làm việc"
           handleSubmitApi={(_id, data) => caLamViecAxios.create(data!)}
           formData={formData}
           onSubmitSuccess={() => {
@@ -459,15 +471,15 @@ export default function CaLamViecPage() {
           }}
         >
           <FormCaLamViec formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </CategoryModal>
 
-        <DrawerCommon
-          title="Sửa ca làm việc"
-          open={isOpenDrawerEdit}
-          onClose={() => {
+        <CategoryModal
+          isOpen={isOpenDrawerEdit}
+          onOpenChange={(open) => { if (!open) {
             onCloseDrawerEdit()
             setFormData({})
-          }}
+          } }}
+          title="Sửa ca làm việc"
           handleSubmitApi={(_id, data) => caLamViecAxios.update(String(editingId), data!)}
           formData={formData}
           onSubmitSuccess={() => {
@@ -476,7 +488,7 @@ export default function CaLamViecPage() {
           }}
         >
           <FormCaLamViec formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </CategoryModal>
       </div>
 
       <TablePagination
@@ -514,6 +526,11 @@ export default function CaLamViecPage() {
             : 'Bạn có chắc chắn muốn xóa ca làm việc này không? Hành động này không thể hoàn tác.'
         }
         isDanger={true}
+      />
+      <CategoryHistoryDrawer
+        open={lichSuOpen}
+        onClose={() => setLichSuOpen(false)}
+        entityKey="calamviec"
       />
     </div>
   )

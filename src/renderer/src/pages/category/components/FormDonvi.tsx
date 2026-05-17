@@ -2,7 +2,7 @@
 import { SelectFloatingLabel } from '@renderer/components/SelectFloatingLabel'
 import { Tabs, Tab, Checkbox, Input } from '@heroui/react'
 import InputFloatingEndLabel from '@renderer/components/InputFloatingEndLabel'
-import { LOAI_DON_VI } from '@renderer/api/danhmuc/DonviAxios'
+import { LOAI_DON_VI } from '../mockApi'
 import { Trash2 } from 'lucide-react'
 
 type FormDonviProps = {

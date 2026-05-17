@@ -1,16 +1,17 @@
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { hinhthucAxios } from '@renderer/api/danhmuc/hinhthucAxios'
+import { hinhthucAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { History, Plus, Search } from 'lucide-react'
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useHinhThucStore } from '@renderer/store/useHinhThucStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { CategoryModal } from './components/CategoryModal'
 import FormHinhThuc from './components/FormHinhThuc'
 import { toast } from "@heroui-v3/react";
 
@@ -68,6 +69,8 @@ export default function HinhThucPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [lichSuOpen, setLichSuOpen] = useState(false)
 
     const {
         data: responseData,
@@ -414,6 +417,15 @@ export default function HinhThucPage() {
                     )}
                     {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
                     <Button
+                            variant="light"
+                            size="sm"
+                            startContent={<History size={16} />}
+                            className="text-gray-600 font-medium"
+                            onPress={() => setLichSuOpen(true)}
+                        >
+                            Lịch sử
+                        </Button>
+                    <Button
                         color="primary"
                         size="sm"
                         startContent={<Plus size={18} />}
@@ -448,13 +460,13 @@ export default function HinhThucPage() {
                     primaryKey="id_hinh_thuc"
                 />
 
-                <DrawerCommon
-                    title="Thêm hình thức"
-                    open={isOpenDrawerAdd}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerAdd}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerAdd()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Thêm hình thức"
                     handleSubmitApi={(_id, data) => hinhthucAxios.create(data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -463,15 +475,15 @@ export default function HinhThucPage() {
                     }}
                 >
                     <FormHinhThuc formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
 
-                <DrawerCommon
-                    title="Sửa hình thức"
-                    open={isOpenDrawerEdit}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerEdit}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerEdit()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Sửa hình thức"
                     handleSubmitApi={(_id, data) => hinhthucAxios.update(String(editingId), data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -480,7 +492,7 @@ export default function HinhThucPage() {
                     }}
                 >
                     <FormHinhThuc formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
             </div>
 
             <TablePagination
@@ -515,6 +527,11 @@ export default function HinhThucPage() {
                 title="Xác nhận sửa đổi"
                 content="Bạn có chắc chắn muốn lưu thay đổi này không?"
                 isDanger={false}
+            />
+            <CategoryHistoryDrawer
+                open={lichSuOpen}
+                onClose={() => setLichSuOpen(false)}
+                entityKey="hinhthuc"
             />
         </div>
     )

@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { InputFloatingEndLabel } from '@renderer/components/InputFloatingEndLabel'
 import { SelectFloatingLabel } from '@renderer/components/SelectFloatingLabel'
-import { TruongAxios } from '@renderer/api/danhmuc/donviDemoAxios'
+import { TruongAxios } from '../mockApi'
 
 type FormKhoaProps = {
   formData: Record<string, any>

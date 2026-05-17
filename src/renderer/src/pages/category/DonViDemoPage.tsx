@@ -3,15 +3,16 @@ import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { History, Plus, Search } from 'lucide-react'
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useAuthStore } from '@renderer/store/useAuthStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { CategoryModal } from './components/CategoryModal'
 import { toast } from "@heroui-v3/react";
-import { KhoaAxios } from '@renderer/api/danhmuc/donviDemoAxios'
+import { KhoaAxios } from './mockApi'
 import FormKhoa from './components/FormKhoa'
 
 interface DonViDemoPageProps {
@@ -97,6 +98,8 @@ export default function DonViDemoPage({
     value: string
   } | null>(null)
   const { isOpen: isOpenConfirmEdit, onOpen: onOpenConfirmEdit, onClose: onCloseConfirmEdit } = useDisclosure()
+
+  const [lichSuOpen, setLichSuOpen] = useState(false)
 
   // Query danh sách chính
   const { data: responseData, isLoading, refetch, isFetching } = useQuery({
@@ -404,6 +407,17 @@ export default function DonViDemoPage({
           )
         },
         {
+          uid: 'ten_viet_tat',
+          name: 'Tên viết tắt',
+          sortable: true,
+          width: 150,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_viet_tat, row, 'ten_viet_tat')}
+            </div>
+          )
+        },
+        {
           uid: 'ten_tieng_anh',
           name: 'Tên tiếng Anh',
           sortable: true,
@@ -457,6 +471,17 @@ export default function DonViDemoPage({
           render: (_, row: any) => (
             <div className="font-semibold text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
               {renderEditableCell(row.ten_trung_tam, row, 'ten_trung_tam')}
+            </div>
+          )
+        },
+        {
+          uid: 'ten_viet_tat',
+          name: 'Tên viết tắt',
+          sortable: true,
+          width: 150,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_viet_tat, row, 'ten_viet_tat')}
             </div>
           )
         },
@@ -575,9 +600,14 @@ export default function DonViDemoPage({
           )}
           {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
           {canCreate && (
-            <Button color="primary" size="sm" startContent={<Plus size={18} />} className="font-medium rounded-md px-4" onPress={() => onOpenDrawerAdd()}>
-              Thêm mới
-            </Button>
+            <>
+              <Button variant="light" size="sm" startContent={<History size={16} />} className="text-gray-600 font-medium" onPress={() => setLichSuOpen(true)}>
+                Lịch sử
+              </Button>
+              <Button color="primary" size="sm" startContent={<Plus size={18} />} className="font-medium rounded-md px-4" onPress={() => onOpenDrawerAdd()}>
+                Thêm mới
+              </Button>
+            </>
           )}
           <TableColumnVisibility
             columns={allColumns}
@@ -607,52 +637,55 @@ export default function DonViDemoPage({
         {isKhoaMode ? (
           // Đang xem khoa của trường - dùng form Khoa
           <>
-            <DrawerCommon
+            <CategoryModal
+              isOpen={isOpenDrawerAdd}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerAdd(); setFormData({}) } }}
               title="Thêm khoa"
-              open={isOpenDrawerAdd}
-              onClose={() => { onCloseDrawerAdd(); setFormData({}) }}
-              handleSubmitApi={(_id, data) => KhoaAxios.create({ ...data!, id_truong: idTruong })}
+              handleSubmitApi={(_id, data) => {
+                if (data instanceof FormData) data.append('id_truong', String(idTruong))
+                return KhoaAxios.create(data!)
+              }}
               formData={formData}
               onSubmitSuccess={() => { refetchKhoa(); setFormData({}) }}
             >
               <FormKhoa formData={formData} setFormData={setFormData} isEdit={false} />
-            </DrawerCommon>
+            </CategoryModal>
 
-            <DrawerCommon
+            <CategoryModal
+              isOpen={isOpenDrawerEdit}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerEdit(); setFormData({}) } }}
               title="Sửa khoa"
-              open={isOpenDrawerEdit}
-              onClose={() => { onCloseDrawerEdit(); setFormData({}) }}
               handleSubmitApi={(_id, data) => KhoaAxios.update(String(editingId), data!)}
               formData={formData}
               onSubmitSuccess={() => { refetchKhoa(); setFormData({}) }}
             >
               <FormKhoa formData={formData} setFormData={setFormData} />
-            </DrawerCommon>
+            </CategoryModal>
           </>
         ) : (
           // Mặc định - dùng form của component
           <>
-            <DrawerCommon
+            <CategoryModal
+              isOpen={isOpenDrawerAdd}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerAdd(); setFormData({}) } }}
               title={`Thêm ${title.toLowerCase()}`}
-              open={isOpenDrawerAdd}
-              onClose={() => { onCloseDrawerAdd(); setFormData({}) }}
               handleSubmitApi={(_id, data) => apiService.create(data!)}
               formData={formData}
               onSubmitSuccess={() => { refetch(); setFormData({}) }}
             >
               <FormComponent formData={formData} setFormData={setFormData} isEdit={false} />
-            </DrawerCommon>
+            </CategoryModal>
 
-            <DrawerCommon
+            <CategoryModal
+              isOpen={isOpenDrawerEdit}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerEdit(); setFormData({}) } }}
               title={`Sửa ${title.toLowerCase()}`}
-              open={isOpenDrawerEdit}
-              onClose={() => { onCloseDrawerEdit(); setFormData({}) }}
               handleSubmitApi={(_id, data) => apiService.update(String(editingId), data!)}
               formData={formData}
               onSubmitSuccess={() => { refetch(); setFormData({}) }}
             >
               <FormComponent formData={formData} setFormData={setFormData} />
-            </DrawerCommon>
+            </CategoryModal>
           </>
         )}
       </div>
@@ -683,6 +716,11 @@ export default function DonViDemoPage({
         title="Xác nhận sửa đổi"
         content="Bạn có chắc chắn muốn lưu thay đổi này không?"
         isDanger={false}
+      />
+      <CategoryHistoryDrawer
+        open={lichSuOpen}
+        onClose={() => setLichSuOpen(false)}
+        entityKey={isKhoaMode ? 'khoa' : title === 'Phòng ban' ? 'phongban' : title === 'Trung tâm' ? 'trungtam' : 'truong'}
       />
     </div>
   )

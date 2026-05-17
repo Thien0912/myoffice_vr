@@ -1,16 +1,17 @@
 ﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { LoaiNghiPhepAxios } from '@renderer/api/danhmuc/loaiNghiPhepAxios'
+import { LoaiNghiPhepAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { History, Plus, Search } from 'lucide-react'
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useLoaiNghiPhepStore } from '@renderer/store/useLoaiNghiPhepStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { CategoryModal } from './components/CategoryModal'
 import FormLoaiNghiPhep from './components/FormLoaiNghiPhep'
 import { toast } from "@heroui-v3/react";
 
@@ -51,6 +52,8 @@ export default function LoaiNghiPhepPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [lichSuOpen, setLichSuOpen] = useState(false)
 
     const {
         data: responseData,
@@ -338,6 +341,15 @@ export default function LoaiNghiPhepPage() {
                         )}
                         {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
                         <Button
+                            variant="light"
+                            size="sm"
+                            startContent={<History size={16} />}
+                            className="text-gray-600 font-medium"
+                            onPress={() => setLichSuOpen(true)}
+                        >
+                            Lịch sử
+                        </Button>
+                        <Button
                             color="primary"
                             size="sm"
                             startContent={<Plus size={18} />}
@@ -372,13 +384,13 @@ export default function LoaiNghiPhepPage() {
                     primaryKey="id_loai_phep"
                 />
 
-                <DrawerCommon
-                    title="Thêm loại nghỉ phép"
-                    open={isOpenDrawerAdd}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerAdd}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerAdd()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Thêm loại nghỉ phép"
                     handleSubmitApi={(_id, data) => LoaiNghiPhepAxios.create(data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -387,15 +399,15 @@ export default function LoaiNghiPhepPage() {
                     }}
                 >
                     <FormLoaiNghiPhep formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
 
-                <DrawerCommon
-                    title="Sửa loại nghỉ phép"
-                    open={isOpenDrawerEdit}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerEdit}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerEdit()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Sửa loại nghỉ phép"
                     handleSubmitApi={(_id, data) => LoaiNghiPhepAxios.update(String(editingId), data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -404,7 +416,7 @@ export default function LoaiNghiPhepPage() {
                     }}
                 >
                     <FormLoaiNghiPhep formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
             </div>
 
             <TablePagination
@@ -427,6 +439,11 @@ export default function LoaiNghiPhepPage() {
                         : 'Bạn có chắc chắn muốn xóa loại nghỉ phép này không? Hành động này không thể hoàn tác.'
                 }
                 isDanger={true}
+            />
+            <CategoryHistoryDrawer
+                open={lichSuOpen}
+                onClose={() => setLichSuOpen(false)}
+                entityKey="loainghiphep"
             />
         </div>
     )

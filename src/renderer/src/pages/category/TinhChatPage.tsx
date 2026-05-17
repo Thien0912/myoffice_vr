@@ -1,16 +1,17 @@
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { tinhchatAxios } from '@renderer/api/danhmuc/tinhChatAxios'
+import { tinhchatAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { History, Plus, Search } from 'lucide-react'
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useTinhChatStore } from '@renderer/store/useTinhChatStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { CategoryModal } from './components/CategoryModal'
 import FormTinhChat from './components/FormTinhChat'
 import { toast } from "@heroui-v3/react";
 
@@ -68,6 +69,8 @@ export default function TinhChatPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [lichSuOpen, setLichSuOpen] = useState(false)
 
     const {
         data: responseData,
@@ -308,9 +311,9 @@ export default function TinhChatPage() {
             },
             {
                 uid: 'class_color',
-                name: 'Màu sắc',
+                name: 'Màu sắc (Class)',
                 sortable: true,
-                width: 100,
+                width: 200,
                 render: (_, row: any) => {
                     const isEditing =
                         editingCell?.id === row.id_tinh_chat && editingCell?.column === 'class_color'
@@ -330,7 +333,7 @@ export default function TinhChatPage() {
                             onBlur={handleFinishEdit}
                             classNames={{ input: 'text-sm' }}
                         />
-                    )             : (
+                    ) : (
                         <div
                             className={`cursor-pointer hover:text-blue-600 transition-colors ${!row.class_color ? 'text-gray-400 italic' : ''}`}
                             onDoubleClick={() =>
@@ -342,20 +345,9 @@ export default function TinhChatPage() {
                             }
                             title="Double click để sửa"
                         >
-                            <div className='flex items-center'>
-                                {row.class_color ? (
-                                    <span 
-                                        className="inline-block w-5 h-5 rounded-full border border-gray-300" 
-                                        style={{ 
-                                            backgroundColor: row.class_color === 'base-green' ? '#22c55e' 
-                                                : row.class_color === 'base-yellow' ? '#eab308'
-                                                : row.class_color === 'base-red' ? '#ef4444'
-                                                : row.class_color
-                                        }}
-                                    ></span>
-                                ) : (
-                                    <span className="text-gray-400 text-sm">--</span>
-                                )}
+                            <div className='flex items-center gap-2'>
+                                {row.class_color && <span className={`inline-block w-4 h-4 rounded-full ${row.class_color.replace('text-', 'bg-')}`}></span>}
+                                <span>{row.class_color || '--'}</span>
                             </div>
                         </div>
                     )
@@ -430,6 +422,15 @@ export default function TinhChatPage() {
                         )}
                         {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
                         <Button
+                            variant="light"
+                            size="sm"
+                            startContent={<History size={16} />}
+                            className="text-gray-600 font-medium"
+                            onPress={() => setLichSuOpen(true)}
+                        >
+                            Lịch sử
+                        </Button>
+                        <Button
                             color="primary"
                             size="sm"
                             startContent={<Plus size={18} />}
@@ -464,13 +465,13 @@ export default function TinhChatPage() {
                     primaryKey="id_tinh_chat"
                 />
 
-                <DrawerCommon
-                    title="Thêm tính chất"
-                    open={isOpenDrawerAdd}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerAdd}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerAdd()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Thêm tính chất"
                     handleSubmitApi={(_id, data) => tinhchatAxios.create(data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -479,15 +480,15 @@ export default function TinhChatPage() {
                     }}
                 >
                     <FormTinhChat formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
 
-                <DrawerCommon
-                    title="Sửa tính chất"
-                    open={isOpenDrawerEdit}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerEdit}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerEdit()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Sửa tính chất"
                     handleSubmitApi={(_id, data) => tinhchatAxios.update(String(editingId), data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -496,7 +497,7 @@ export default function TinhChatPage() {
                     }}
                 >
                     <FormTinhChat formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
             </div>
 
             <TablePagination
@@ -531,6 +532,11 @@ export default function TinhChatPage() {
                 title="Xác nhận sửa đổi"
                 content="Bạn có chắc chắn muốn lưu thay đổi này không?"
                 isDanger={false}
+            />
+            <CategoryHistoryDrawer
+                open={lichSuOpen}
+                onClose={() => setLichSuOpen(false)}
+                entityKey="tinhchat"
             />
         </div>
     )

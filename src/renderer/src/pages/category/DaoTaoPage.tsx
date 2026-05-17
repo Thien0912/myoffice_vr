@@ -1,16 +1,17 @@
-﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
-import { daotaoAxios } from '@renderer/api/danhmuc/daotaoAxios'
+import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
+import { daotaoAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { History, Plus, Search } from 'lucide-react'
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useDaoTaoStore } from '@renderer/store/useDaoTaoStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { CategoryModal } from './components/CategoryModal'
 import FormDaoTao from './components/FormDaoTao'
 import moment from 'moment'
 import { toast } from "@heroui-v3/react";
@@ -52,6 +53,8 @@ export default function DaoTaoPage() {
         onClose: onCloseDrawerEdit,
         onOpen: onOpenDrawerEdit
     } = useDisclosure()
+
+    const [lichSuOpen, setLichSuOpen] = useState(false)
 
     const {
         data: responseData,
@@ -338,6 +341,15 @@ export default function DaoTaoPage() {
                         )}
                         {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
                         <Button
+                            variant="light"
+                            size="sm"
+                            startContent={<History size={16} />}
+                            className="text-gray-600 font-medium"
+                            onPress={() => setLichSuOpen(true)}
+                        >
+                            Lịch sử
+                        </Button>
+                        <Button
                             color="primary"
                             size="sm"
                             startContent={<Plus size={18} />}
@@ -375,13 +387,13 @@ export default function DaoTaoPage() {
                     primaryKey="id_dao_tao"
                 />
 
-                <DrawerCommon
-                    title="Thêm khóa đào tạo"
-                    open={isOpenDrawerAdd}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerAdd}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerAdd()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Thêm khóa đào tạo"
                     handleSubmitApi={(_id, data) => daotaoAxios.create(Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -390,15 +402,15 @@ export default function DaoTaoPage() {
                     }}
                 >
                     <FormDaoTao formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
 
-                <DrawerCommon
-                    title="Sửa khóa đào tạo"
-                    open={isOpenDrawerEdit}
-                    onClose={() => {
+                <CategoryModal
+                    isOpen={isOpenDrawerEdit}
+                    onOpenChange={(open) => { if (!open) {
                         onCloseDrawerEdit()
                         setFormData({})
-                    }}
+                    } }}
+                    title="Sửa khóa đào tạo"
                     handleSubmitApi={(_id, data) => daotaoAxios.update(String(editingId), Object.fromEntries(data!))}
                     formData={formData}
                     onSubmitSuccess={() => {
@@ -407,7 +419,7 @@ export default function DaoTaoPage() {
                     }}
                 >
                     <FormDaoTao formData={formData} setFormData={setFormData} />
-                </DrawerCommon>
+                </CategoryModal>
             </div>
 
             <TablePagination
@@ -430,6 +442,11 @@ export default function DaoTaoPage() {
                         : 'Bạn có chắc chắn muốn xóa khóa đào tạo này không? Hành động này không thể hoàn tác.'
                 }
                 isDanger={true}
+            />
+            <CategoryHistoryDrawer
+                open={lichSuOpen}
+                onClose={() => setLichSuOpen(false)}
+                entityKey="daotao"
             />
         </div>
     )

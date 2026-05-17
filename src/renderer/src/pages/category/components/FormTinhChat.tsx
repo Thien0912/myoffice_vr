@@ -27,11 +27,11 @@ export default function FormTinhChat({ formData, setFormData }: FormTinhChatProp
 
                 <div>
                     <InputFloatingLabel
-                        label="Màu sắc"
+                        label="Màu sắc (Class Color)"
                         name="class_color"
                         value={formData.class_color || ''}
                         onChange={(val) => handleChange('class_color', val)}
-                        placeholder="VD: base-green, base-yellow, base-red hoặc #FF0000"
+                        placeholder="VD: text-red-500, bg-blue-100..."
                     />
                 </div>
             </div>
