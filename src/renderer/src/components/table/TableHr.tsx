@@ -160,9 +160,8 @@ const TableHrCell = memo(
             <Checkbox
               isSelected={isRowSelected}
               onValueChange={() => toggleRow(String(rowId))}
-              size="sm"
               className="m-0 p-0"
-              classNames={{ wrapper: 'm-0 before:!border-black' }}
+              classNames={{ wrapper: 'm-0' }}
               aria-label="Select row"
             />
           </div>
@@ -287,7 +286,7 @@ const TableHrCell = memo(
 
         content = (
           <div
-            className={cn('w-full h-full flex items-center px-5 py-1 min-h-10 group/edit relative min-w-0', isCellEditable && 'cursor-pointer', col.className)}
+            className={cn('w-full h-full flex items-center px-4 py-3 min-h-12 group/edit relative min-w-0', isCellEditable && 'cursor-pointer', col.className)}
             onClick={
               isCellEditable
                 ? (e) => {
@@ -345,7 +344,7 @@ const TableHrCell = memo(
         >
           {content}
         </div>
-        {enableResizing && !isLastColumn && col.uid !== 'stt' && col.uid !== 'selection' && (
+        {enableResizing && !isLastColumn && (
           <div
             className="absolute -right-2 top-0 h-full w-4 cursor-col-resize z-20 flex justify-center touch-none"
             onMouseDown={(e) => {
@@ -556,7 +555,7 @@ export default function TableHr<T extends Record<string, unknown>>({
   // Apply column order, then sort by pinning
   const sortedColumns = useMemo(() => {
     const colMap = new Map(processedColumns.map((c) => [c.uid, c]))
-    const ordered = (columnOrder || processedColumns.map((c) => c.uid))
+    const ordered = columnOrder
       .map((uid) => colMap.get(uid))
       .filter(Boolean) as typeof processedColumns
 
@@ -580,22 +579,6 @@ export default function TableHr<T extends Record<string, unknown>>({
 
   // ── Scroll ref ──
   const scrollRef = useRef<HTMLDivElement>(null)
-
-  // Detect container zoom (e.g. DanhmucPage uses zoom: 0.90)
-  const [containerZoom, setContainerZoom] = useState(1)
-  useEffect(() => {
-    if (scrollRef.current) {
-      let el: HTMLElement | null = scrollRef.current
-      while (el) {
-        const zoom = parseFloat(getComputedStyle(el).zoom)
-        if (zoom && zoom !== 1) {
-          setContainerZoom(zoom)
-          break
-        }
-        el = el.parentElement
-      }
-    }
-  }, [])
 
   // ── Resizing ──
   const { columnWidths, onResizeStart, guideLineRef } = useTableResizing(
@@ -850,11 +833,11 @@ export default function TableHr<T extends Record<string, unknown>>({
                         disabled={!enableColumnReorder}
                         style={thStyle}
                         className={cn(
-                          'py-3 px-5 text-sm font-bold text-left select-none group relative',
+                          'py-3.5 px-4 text-sm font-bold text-left select-none group relative',
                           'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
-                          hBorder, thBorder, col.uid === 'stt' || col.uid === 'selection' ? '' : vBorder,
+                          hBorder, thBorder, vBorder,
                           col.pinned ? 'bg-gray-50 dark:bg-gray-800' : '',
-                          isLastLeft && col.uid !== 'stt' && col.uid !== 'selection' ? 'pinned-last-left' : '',
+                          isLastLeft ? 'pinned-last-left' : '',
                           isFirstRight ? 'pinned-first-right' : ''
                         )}
                       >
@@ -866,10 +849,10 @@ export default function TableHr<T extends Record<string, unknown>>({
                                 {selectionMode === 'multiple' ? (
                                   <Checkbox
                                     isSelected={isAllSelected}
+                                    isIndeterminate={isIndeterminate}
                                     onValueChange={onToggleAll}
-                                    size="sm"
                                     className="m-0 p-0"
-                                    classNames={{ wrapper: 'm-0 before:!border-black' }}
+                                    classNames={{ wrapper: 'm-0' }}
                                     aria-label="Select all"
                                   />
                                 ) : (
@@ -966,7 +949,7 @@ export default function TableHr<T extends Record<string, unknown>>({
                             )}
 
                             {/* Resize handle */}
-                            {canResize && col.uid !== sortedColumns[sortedColumns.length - 1].uid && col.uid !== 'stt' && col.uid !== 'selection' && (
+                            {canResize && col.uid !== sortedColumns[sortedColumns.length - 1].uid && (
                               <div
                                 className="absolute -right-2 top-0 h-full w-4 cursor-col-resize z-20 flex justify-center touch-none"
                                 onMouseDown={(e) => {
@@ -1006,8 +989,8 @@ export default function TableHr<T extends Record<string, unknown>>({
                         <td
                           key={col.uid}
                           className={cn(
-                            `px-5 py-3 ${hBorder} ${col.uid === 'stt' || col.uid === 'selection' ? '' : vBorder} relative h-full min-h-10 min-w-0`,
-                            isLastLeft && col.uid !== 'stt' && col.uid !== 'selection' ? 'pinned-last-left' : '',
+                            `p-4 ${hBorder} ${vBorder} relative h-full min-h-12 min-w-0`,
+                            isLastLeft ? 'pinned-last-left' : '',
                             isFirstRight ? 'pinned-first-right' : '',
                             col.pinned ? 'bg-white dark:bg-gray-900' : ''
                           )}
@@ -1102,9 +1085,9 @@ export default function TableHr<T extends Record<string, unknown>>({
                             key={col.uid}
                             className={cn(
                               'p-0 relative h-full min-h-10 min-w-0',
-                              hBorder, col.uid === 'stt' || col.uid === 'selection' ? '' : vBorder,
+                              hBorder, vBorder,
                               cellBg,
-                              isLastLeft && col.uid !== 'stt' && col.uid !== 'selection' ? 'pinned-last-left' : '',
+                              isLastLeft ? 'pinned-last-left' : '',
                               isFirstRight ? 'pinned-first-right' : '',
                               isEditingCell ? 'z-35!' : 'z-0'
                             )}
@@ -1181,13 +1164,12 @@ export default function TableHr<T extends Record<string, unknown>>({
           {enableColumnReorder && (
             <DragOverlay dropAnimation={null}>
               {activeDragUid ? (
-                <div style={{ zoom: containerZoom }}>
-                  <table className={cn('border-separate border-spacing-0 table-fixed bg-white dark:bg-gray-900 shadow-2xl opacity-95 rounded-md overflow-hidden ring-4 ring-blue-500/20')}>
+                <table className={cn('border-separate border-spacing-0 table-fixed bg-white dark:bg-gray-900 shadow-2xl opacity-95 rounded-md overflow-hidden ring-4 ring-blue-500/20')}>
                   <thead>
                     <tr>
                       <th
                         className={cn(
-                          'py-3 px-5 text-sm font-bold text-left select-none',
+                          'py-3.5 px-4 text-sm font-bold text-left select-none',
                           'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
                           hBorder, thBorder, vBorder
                         )}
@@ -1202,7 +1184,6 @@ export default function TableHr<T extends Record<string, unknown>>({
                     </tr>
                   </thead>
                 </table>
-                </div>
               ) : null}
             </DragOverlay>
           )}

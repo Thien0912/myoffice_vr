@@ -1,6 +1,6 @@
 ﻿import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { InputFloatingLabel } from '@renderer/components/InputFloatingLabel'
-import { DonviAxios, mapDonviGroupedOptions } from '@renderer/api/danhmuc/DonviAxios'
+import { DonviAxios, mapDonviGroupedOptions } from '../mockApi'
 import { SelectDropdown, SelectGroup, SelectOption } from '@renderer/components/SelectDropdown'
 
 type FormLoaiVanBanProps = {

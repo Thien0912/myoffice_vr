@@ -1,4 +1,4 @@
-import { ngayleAxios } from '@renderer/api/admin/ngayleAxios';
+import { ngayleAxios } from './mockApi';
 import LunarDateRangePicker, { solarToLunarStr } from '@renderer/components/LunarDateRangePicker';
 import { HrPrimaryButton } from '@renderer/components/hero-custom';
 import { useNgoaiGioPermissions } from '@renderer/pages/hr/overtime/hooks/useNgoaiGioPermissions';
@@ -10,12 +10,14 @@ import {
   ChevronRight,
   Clock,
   Eye,
+  History,
   Info,
   Loader2,
   Plus,
   Trash2,
   X
 } from 'lucide-react';
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer';
 import React, { useCallback, useMemo, useState } from 'react';
 import { getLunarDate } from '@forvn/vn-lunar-calendar';
 
@@ -217,6 +219,8 @@ const LichNghiPhepPage = () => {
   const isReadOnly = role !== 'admin' && editingEvent?.type === 'public';
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const [lichSuOpen, setLichSuOpen] = useState(false);
+
   /* ───────────────────────────────────────────── render ────────────────── */
   return (
     <div className="flex h-full w-full bg-white text-gray-800 font-sans shadow-sm rounded-lg overflow-hidden border border-gray-200">
@@ -254,7 +258,14 @@ const LichNghiPhepPage = () => {
               <button onClick={nextMonth} className="p-1.5 hover:bg-gray-100 rounded-r-lg border-l border-gray-200 flex-1 sm:flex-none flex justify-center"><ChevronRight size={20} /></button>
             </div>
           </div>
-          <div className="flex items-center w-full sm:w-auto justify-end">
+          <div className="flex items-center w-full sm:w-auto justify-end gap-2">
+            <button
+              onClick={() => setLichSuOpen(true)}
+              className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2"
+            >
+              <History size={16} />
+              Lịch sử
+            </button>
             {role === 'admin' && (
               <HrPrimaryButton
                 onPress={handleAddEvent}
@@ -263,6 +274,7 @@ const LichNghiPhepPage = () => {
                 Tạo mới
               </HrPrimaryButton>
             )}
+          </div>
           </div>
         </header>
 
@@ -523,6 +535,12 @@ const LichNghiPhepPage = () => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
+      <CategoryHistoryDrawer
+        open={lichSuOpen}
+        onClose={() => setLichSuOpen(false)}
+        entityKey="ngayle"
+        title="Lịch sử chỉnh sửa - Lịch nghỉ phép"
+      />
     </div>
   );
 };

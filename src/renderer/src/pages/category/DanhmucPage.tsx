@@ -5,7 +5,7 @@ import { useQueries } from '@tanstack/react-query'
 
 // Import cho các danh mục đơn vị mới
 import DonViDemoPage from './DonViDemoPage'
-import { PhongBanAxios, TrungTamAxios, TruongAxios, KhoaAxios } from '@renderer/api/danhmuc/donviDemoAxios'
+import { PhongBanAxios, TrungTamAxios, TruongAxios, KhoaAxios } from './mockApi'
 import FormPhongBan from './components/FormPhongBan'
 import FormTrungTam from './components/FormTrungTam'
 import FormKhoa from './components/FormKhoa'

@@ -53,8 +53,7 @@ export const RoleDetailPermissions = ({ activeRole }: RoleDetailPermissionsProps
                         className="w-full bg-white dark:bg-gray-900"
                     />
                 </div>
-
-                <div className="flex items-center gap-2 mr-3">
+                <div className="flex items-center gap-2">
                     <Button
                         onPress={() => handleSave()}
                         isLoading={isSaving}

@@ -1,21 +1,22 @@
 ﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider, Select, SelectItem } from '@heroui/react'
-import { DonviAxios } from '@renderer/api/danhmuc/DonviAxios'
+import { DonviAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { History, Plus, Search } from 'lucide-react'
+import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
 import { useDonviStore } from '@renderer/store/useDonviStore'
 import { useAuthStore } from '@renderer/store/useAuthStore'
-import { DrawerCommon } from '@renderer/components/DrawerCommon'
+import { CategoryModal } from './components/CategoryModal'
 import { SelectDropdown } from '@renderer/components/SelectDropdown'
 import FormDonvi from './components/FormDonvi'
 import { toast } from "@heroui-v3/react";
-import { LOAI_DON_VI_DANH_MUC } from '@renderer/api/danhmuc/DonviAxios'
+import { LOAI_DON_VI_DANH_MUC } from './mockApi'
 
 interface DonviPageProps {
     loaiDonVi?: string
@@ -57,11 +58,13 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
     onOpen: onOpenDrawerAdd
   } = useDisclosure()
 
-  const {
-    isOpen: isOpenDrawerEdit,
-    onClose: onCloseDrawerEdit,
-    onOpen: onOpenDrawerEdit
-  } = useDisclosure()
+    const {
+        isOpen: isOpenDrawerEdit,
+        onClose: onCloseDrawerEdit,
+        onOpen: onOpenDrawerEdit
+    } = useDisclosure()
+
+    const [lichSuOpen, setLichSuOpen] = useState(false)
 
   // Inline Edit State
   const [editingCell, setEditingCell] = useState<{
@@ -650,6 +653,15 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
               </Button>
             )}
             {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+            <Button
+                            variant="light"
+                            size="sm"
+                            startContent={<History size={16} />}
+                            className="text-gray-600 font-medium"
+                            onPress={() => setLichSuOpen(true)}
+                        >
+                            Lịch sử
+                        </Button>
             {canCreate && (
               <Button
                 color="primary"
@@ -687,17 +699,16 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
           primaryKey="id_don_vi"
         />
 
-        <DrawerCommon
-          title={loaiDonVi ? `Thêm ${UNIT_TYPE_LABELS[loaiDonVi]?.toLowerCase() || 'đơn vị'}` : "Thêm đơn vị"}
-          open={isOpenDrawerAdd}
-          onClose={() => {
+        <CategoryModal
+          isOpen={isOpenDrawerAdd}
+          onOpenChange={(open) => { if (!open) {
             onCloseDrawerAdd()
             setFormData({})
-          }}
+          } }}
+          title={loaiDonVi ? `Thêm ${UNIT_TYPE_LABELS[loaiDonVi]?.toLowerCase() || 'đơn vị'}` : "Thêm đơn vị"}
           handleSubmitApi={(_id, data) => {
-            // Tự động gán loại đơn vị nếu đang ở danh mục con
-            const submitData = loaiDonVi ? { ...data, loai: loaiDonVi } : data
-            return DonviAxios.create(submitData!)
+            if (loaiDonVi && data instanceof FormData) data.append('loai', loaiDonVi)
+            return DonviAxios.create(data!)
           }}
           formData={formData}
           onSubmitSuccess={() => {
@@ -706,15 +717,15 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
           }}
         >
           <FormDonvi formData={formData} setFormData={setFormData} isEdit={false} loaiDonVi={loaiDonVi} />
-        </DrawerCommon>
+        </CategoryModal>
 
-        <DrawerCommon
-          title="Sửa đơn vị"
-          open={isOpenDrawerEdit}
-          onClose={() => {
+        <CategoryModal
+          isOpen={isOpenDrawerEdit}
+          onOpenChange={(open) => { if (!open) {
             onCloseDrawerEdit()
             setFormData({})
-          }}
+          } }}
+          title="Sửa đơn vị"
           handleSubmitApi={(_id, data) => DonviAxios.update(String(editingId), data!)}
           formData={formData}
           onSubmitSuccess={() => {
@@ -723,7 +734,7 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
           }}
         >
           <FormDonvi formData={formData} setFormData={setFormData} />
-        </DrawerCommon>
+        </CategoryModal>
       </div>
 
       <TablePagination
@@ -758,6 +769,11 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
         title="Xác nhận sửa đổi"
         content="Bạn có chắc chắn muốn lưu thay đổi này không?"
         isDanger={false}
+      />
+      <CategoryHistoryDrawer
+        open={lichSuOpen}
+        onClose={() => setLichSuOpen(false)}
+        entityKey="donvi"
       />
     </div>
   )

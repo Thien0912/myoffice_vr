@@ -5,21 +5,14 @@ import LoaiVanBanPage from './LoaiVanBanPage'
 import ViTriCongViecPage from './ViTriCongViecPage'
 import CaLamViecPage from './CaLamViecPage'
 import { useQueries } from '@tanstack/react-query'
-import { loaivanbanAxios } from '@renderer/api/danhmuc/loaiVanbanAxios'
-import { vitricongviecAxios } from '@renderer/api/danhmuc/vitricongviecAxios'
-import { caLamViecAxios } from '@renderer/api/danhmuc/caLamViecAxios'
+import { loaivanbanAxios, vitricongviecAxios, caLamViecAxios, hinhthucAxios, tinhchatAxios, baomatAxios, coquanAxios, daotaoAxios } from './mockApi'
 
 
 import HinhThucPage from './HinhThucPage'
-import { hinhthucAxios } from '@renderer/api/danhmuc/hinhthucAxios'
 import TinhChatPage from './TinhChatPage'
-import { tinhchatAxios } from '@renderer/api/danhmuc/tinhChatAxios'
 import BaoMatPage from './BaoMatPage'
-import { baomatAxios } from '@renderer/api/danhmuc/baomatAxios'
 import CoQuanPage from './CoQuanPage'
-import { coquanAxios } from '@renderer/api/danhmuc/coquanAxios'
 import DaoTaoPage from './DaoTaoPage'
-import { daotaoAxios } from '@renderer/api/danhmuc/daotaoAxios'
 
 export default function DanhMucKhacPage() {
     const { user } = useAuthStore()

@@ -357,6 +357,24 @@ export const ROUTES = [
                         Component: lazy(() => import('@renderer/pages/category/DanhMucHeThong')),
                         children: []
                     },
+                    // {
+                    //     title: 'Đơn vị',
+                    //     description: 'Bản sao quản lý danh mục đơn vị (dữ liệu ảo)',
+                    //     path: 'hrm/danh-muc-clone',
+                    //     hide: false,
+                    //     permission: ['danhmuc', 'donvi', 'loaivanban', 'chucvu'],
+                    //     Component: lazy(() => import('@renderer/pages/category_clone/DanhmucPage')),
+                    //     children: []
+                    // },
+                    // {
+                    //     title: 'Hệ thống',
+                    //     description: 'Bản sao quản lý danh mục hệ thống (dữ liệu ảo)',
+                    //     path: 'hrm/danh-muc-he-thong-clone',
+                    //     hide: false,
+                    //     permission: ['danhmuc', 'loaivanban', 'hinhthuc', 'tinhchat', 'baomat', 'coquan', 'chucvu', 'calamviec', 'daotao'],
+                    //     Component: lazy(() => import('@renderer/pages/category_clone/DanhMucHeThong')),
+                    //     children: []
+                    // },
                     {
                         title: 'Lịch nghỉ phép',
                         description: 'Cấu hình lịch nghỉ lễ cho hệ thống.',
@@ -365,7 +383,16 @@ export const ROUTES = [
                         permission: false,
                         Component: lazy(() => import('@renderer/pages/category/LichNghiPhepPage')),
                         children: []
-                    }
+                    },
+                    // {
+                    //     title: 'Lịch nghỉ phép (Clone)',
+                    //     description: 'Bản sao cấu hình lịch nghỉ lễ (dữ liệu ảo)',
+                    //     path: 'danh-muc/lich-nghi-phep-clone',
+                    //     hide: true,
+                    //     permission: false,
+                    //     Component: lazy(() => import('@renderer/pages/category_clone/LichNghiPhepPage')),
+                    //     children: []
+                    // }
                 ]
             },
             {
@@ -376,7 +403,7 @@ export const ROUTES = [
                 path: undefined,
                 hide: false,
                 icon: Cog,
-                permission: ['nguoidung'],
+                permission: false,
                 children: [
                     {
                         title: 'Quản lý người dùng',
@@ -386,11 +413,20 @@ export const ROUTES = [
                         permission: false,
                         Component: lazy(() => import('@renderer/pages/system/users/UserPage'))
                     },
+                    // {
+                    //     title: 'Quản lý vai trò',
+                    //     description: 'Quản lý vai trò hệ thống và phân quyền theo vai trò',
+                    //     path: 'he-thong/vai-tro',
+                    //     hide: true,
+                    //     permission: false,
+                    //     Component: lazy(() => import('@renderer/pages/system/roles/RolePage')),
+                    //     children: []
+                    // },
                     {
                         title: 'Quản lý vai trò',
-                        description: 'Quản lý vai trò hệ thống và phân quyền theo vai trò',
-                        path: 'he-thong/vai-tro',
-                        hide: true,
+                        description: 'Bản sao quản lý vai trò hệ thống',
+                        path: 'he-thong/vai-tro-clone',
+                        hide: false,
                         permission: false,
                         Component: lazy(() => import('@renderer/pages/system/roles/RolePage')),
                         children: []
@@ -409,6 +445,7 @@ export const ROUTES = [
                         description: 'Theo dõi toàn bộ các thao tác, thay đổi dữ liệu trong hệ thống',
 
                         path: 'he-thong/nhat-ky',
+                        hide: true,
                         permission: false,
                         Component: lazy(() => import('@renderer/pages/system/logs/SystemLogPage')),
                         children: []
