@@ -7,6 +7,7 @@ export interface FakeRole extends Role {
   bgColor: string
   borderColor: string
   colorId?: string
+  is_default?: number
 }
 
 // ===================== DATA STATE =====================
@@ -23,7 +24,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-rose-500',
     textColor: 'text-rose-500',
     bgColor: 'bg-rose-50 dark:bg-rose-900/20',
-    borderColor: 'bg-rose-500'
+    borderColor: 'bg-rose-500',
+    is_default: 1
   },
   {
     ql_vai_tro_id: '2',
@@ -37,7 +39,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-blue-500',
     textColor: 'text-blue-500',
     bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-    borderColor: 'bg-blue-500'
+    borderColor: 'bg-blue-500',
+    is_default: 1
   },
   {
     ql_vai_tro_id: '3',
@@ -51,7 +54,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-emerald-500',
     textColor: 'text-emerald-500',
     bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
-    borderColor: 'bg-emerald-500'
+    borderColor: 'bg-emerald-500',
+    is_default: 1
   },
   {
     ql_vai_tro_id: '4',
@@ -65,7 +69,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-amber-500',
     textColor: 'text-amber-500',
     bgColor: 'bg-amber-50 dark:bg-amber-900/20',
-    borderColor: 'bg-amber-500'
+    borderColor: 'bg-amber-500',
+    is_default: 1
   },
   {
     ql_vai_tro_id: '5',
@@ -79,7 +84,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-violet-500',
     textColor: 'text-violet-500',
     bgColor: 'bg-violet-50 dark:bg-violet-900/20',
-    borderColor: 'bg-violet-500'
+    borderColor: 'bg-violet-500',
+    is_default: 1
   },
   {
     ql_vai_tro_id: '6',
@@ -93,7 +99,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-pink-500',
     textColor: 'text-pink-500',
     bgColor: 'bg-pink-50 dark:bg-pink-900/20',
-    borderColor: 'bg-pink-500'
+    borderColor: 'bg-pink-500',
+    is_default: 1
   },
   {
     ql_vai_tro_id: '7',
@@ -107,7 +114,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-cyan-500',
     textColor: 'text-cyan-500',
     bgColor: 'bg-cyan-50 dark:bg-cyan-900/20',
-    borderColor: 'bg-cyan-500'
+    borderColor: 'bg-cyan-500',
+    is_default: 1
   },
   {
     ql_vai_tro_id: '8',
@@ -121,7 +129,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-green-500',
     textColor: 'text-green-500',
     bgColor: 'bg-green-50 dark:bg-green-900/20',
-    borderColor: 'bg-green-500'
+    borderColor: 'bg-green-500',
+    is_default: 0
   },
   {
     ql_vai_tro_id: '9',
@@ -135,7 +144,8 @@ let fakeRolesData: FakeRole[] = [
     dotColor: 'bg-purple-500',
     textColor: 'text-purple-500',
     bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-    borderColor: 'bg-purple-500'
+    borderColor: 'bg-purple-500',
+    is_default: 0
   },
 ]
 
@@ -371,7 +381,8 @@ export const mockRolesAxios = {
         bgColor: r.bgColor,
         borderColor: r.borderColor,
         colorId: r.colorId,
-        customColorHex: r.customColorHex
+        customColorHex: r.customColorHex,
+        is_default: r.is_default
       }))
     }
   },
@@ -460,6 +471,7 @@ export const mockRolesAxios = {
       created_at: new Date().toLocaleString('vi-VN'),
       total_members: 0,
       active_flag: 1,
+      is_default: 0,
       colorId: data.colorId,
       ...colorClasses,
       ...(data.colorId?.startsWith('#') ? { customColorHex: data.colorId } : {})

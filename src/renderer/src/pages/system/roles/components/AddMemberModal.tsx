@@ -66,25 +66,24 @@ export const AddMemberModal = ({
 
   const title = 'Thêm thành viên'
   const subtitle = activeRoleName 
-    ? `Thêm thành viên vào vai trò "${activeRoleName}".` 
+    ? `Thêm thành viên vào "${activeRoleName}".` 
     : 'Thêm thành viên vào vai trò.'
 
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal.Container
-        size="4xl"
+        size="full"
         placement="auto"
-        scroll="inside"
         className="max-w-4xl! w-full"
       >
-        <Modal.Dialog className="rounded-3xl! overflow-hidden shadow-[0_24px_48px_-12px_rgba(25,28,29,0.15)] p-0">
+        <Modal.Dialog className="rounded-3xl! overflow-hidden shadow-[0_24px_48px_-12px_rgba(25,28,29,0.15)] p-0 flex flex-col max-h-[90vh]">
           {/* ─── Header: Stitch style ─── */}
-          <Modal.Header className="px-7 py-5! border-b-0">
+          <Modal.Header className="px-7 py-5! border-b-0 shrink-0">
             <div className="flex w-full items-start sm:items-center justify-between gap-4">
               <div className="flex flex-col gap-0.5 w-full">
                 <div className="flex items-center gap-1.5">
                   <Users size={22} className="text-blue-500" />
-                  <Modal.Heading className="text-xl! font-bold tracking-tight">
+                  <Modal.Heading className="text-xl !font-[400] tracking-tight">
                     {title}
                   </Modal.Heading>
                   <Tooltip delay={0}>
@@ -103,7 +102,7 @@ export const AddMemberModal = ({
                 </div>
                 {activeRoleName && (
                   <span className="text-sm text-gray-500 ml-8">
-                    Vai trò: <span className="font-semibold text-gray-700 dark:text-gray-300">{activeRoleName}</span>
+                    Vai trò: <span className="font-400 text-gray-700 dark:text-gray-300">{activeRoleName}</span>
                   </span>
                 )}
               </div>
@@ -123,9 +122,23 @@ export const AddMemberModal = ({
           </Modal.Header>
 
           {/* ─── Body ─── */}
-          <Modal.Body className="py-4 px-7!">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-4">
+          <Modal.Body className="pt-2 px-7! pb-0! flex flex-col min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-0 min-h-0 flex-1">
+              <div className="flex items-center justify-between gap-4 shrink-0 mb-4">
+                <div className="w-72">
+                  <SearchField
+                    aria-label="Tìm thành viên"
+                    value={search}
+                    onChange={onSearchChange}
+                    className="w-full"
+                  >
+                    <SearchField.Group className="h-10">
+                      <SearchField.SearchIcon />
+                      <SearchField.Input placeholder="Tìm thành viên..." />
+                      <SearchField.ClearButton />
+                    </SearchField.Group>
+                  </SearchField>
+                </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <span>Đã chọn:</span>
@@ -142,35 +155,32 @@ export const AddMemberModal = ({
                     </Button>
                   )}
                 </div>
-                <div className="w-72">
-                  <SearchField
-                    aria-label="Tìm thành viên"
-                    value={search}
-                    onChange={onSearchChange}
-                    className="w-full"
-                  >
-                    <SearchField.Group className="h-10">
-                      <SearchField.SearchIcon />
-                      <SearchField.Input placeholder="Tìm thành viên..." />
-                      <SearchField.ClearButton />
-                    </SearchField.Group>
-                  </SearchField>
-                </div>
               </div>
 
-              <div className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
-                <TableHr
-                  columns={columns}
-                  data={availableUsers}
-                  isLoading={isLoading}
-                  primaryKey="ql_nguoi_dung_id"
-                  enableSorting={false}
-                  selectedKeys={selectedKeys}
-                  onSelectionChange={onSelectionChange}
-                  enableResizing={false}
-                  enablePinning={false}
-                  className="h-full"
-                />
+              <div className="rounded-2xl flex-1 min-h-0 overflow-hidden border-t border-gray-200 dark:border-gray-700">
+                <div
+                  className="
+                    h-full min-h-0 overflow-auto
+                    [&_td]:!min-h-7
+                    [&_.min-h-12]:!min-h-6
+                    [&_.min-h-10]:!min-h-6
+                    [&_.py-3]:!py-0.5
+                    [&_.px-4]:!px-2
+                  "
+                >
+                  <TableHr
+                    columns={columns}
+                    data={availableUsers}
+                    isLoading={isLoading}
+                    primaryKey="ql_nguoi_dung_id"
+                    enableSorting={false}
+                    selectedKeys={selectedKeys}
+                    onSelectionChange={onSelectionChange}
+                    enableResizing={false}
+                    enablePinning={false}
+                    className="h-full"
+                  />
+                </div>
               </div>
 
               <TablePagination
@@ -179,13 +189,13 @@ export const AddMemberModal = ({
                 limit={limit}
                 onChangePage={onChangePage}
                 onChangeLimit={onChangeLimit}
-                className="p-2 border-t border-gray-100 dark:border-gray-800"
+                className="p-1 px-3 border-t border-gray-100 dark:border-gray-800 shrink-0"
               />
             </div>
           </Modal.Body>
 
           {/* ─── Footer: Stitch MD3 style ─── */}
-          <Modal.Footer className="px-6 py-4! border-t border-gray-100 dark:border-gray-800">
+          <Modal.Footer className="px-6 py-4! pt-0! border-t-0">
             <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
               {/* Info Card */}
               <div className="flex items-center gap-3 bg-blue-50/60 dark:bg-blue-900/15 px-4 py-2.5 rounded-xl w-full sm:w-auto">

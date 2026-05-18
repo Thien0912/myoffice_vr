@@ -14,6 +14,7 @@ import { useDaoTaoStore } from '@renderer/store/useDaoTaoStore'
 import { CategoryModal } from './components/CategoryModal'
 import FormDaoTao from './components/FormDaoTao'
 import moment from 'moment'
+import { HrPrimaryButton } from '@renderer/components/hero-custom';
 import { toast } from "@heroui-v3/react";
 
 export default function DaoTaoPage() {
@@ -349,18 +350,15 @@ export default function DaoTaoPage() {
                         >
                             Lịch sử
                         </Button>
-                        <Button
-                            color="primary"
-                            size="sm"
-                            startContent={<Plus size={18} />}
-                            className="font-medium rounded-md px-4"
-                            onPress={() => {
-                                setFormData({ trang_thai: 'Dang_dien_ra' })
-                                onOpenDrawerAdd()
-                            }}
-                        >
-                            Thêm mới
-                        </Button>
+                            <HrPrimaryButton
+                                onPress={() => {
+                                    setFormData({ trang_thai: 'Dang_dien_ra' })
+                                    onOpenDrawerAdd()
+                                }}
+                                startContent={<Plus size={18} />}
+                            >
+                                Thêm mới
+                            </HrPrimaryButton>
                         <TableColumnVisibility
                             columns={allColumns}
                             visibleColumns={new Set(filters.initial_visible_columns)}

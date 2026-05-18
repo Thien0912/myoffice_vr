@@ -18,13 +18,21 @@ export const useRoleMemberLogic = ({ activeRole }: UseRoleMemberLogicProps) => {
     const [searchInRole, setSearchInRole] = useState('')
     const [debouncedSearchInRole, setDebouncedSearchInRole] = useState('')
     const [pageInRole, setPageInRole] = useState(1)
-    const [limitInRole, setLimitInRole] = useState(10)
+    const [limitInRole, _setLimitInRole] = useState(10)
+    const setLimitInRole = (limit: number) => {
+      _setLimitInRole(limit)
+      setPageInRole(1)
+    }
 
     // State for Available Table
     const [searchAvailable, setSearchAvailable] = useState('')
     const [debouncedSearchAvailable, setDebouncedSearchAvailable] = useState('')
     const [pageAvailable, setPageAvailable] = useState(1)
-    const [limitAvailable, setLimitAvailable] = useState(10)
+    const [limitAvailable, _setLimitAvailable] = useState(10)
+    const setLimitAvailable = (limit: number) => {
+      _setLimitAvailable(limit)
+      setPageAvailable(1)
+    }
 
     // Manage selection
     const [selectedInRole, setSelectedInRole] = useState<Selection>(new Set([]))

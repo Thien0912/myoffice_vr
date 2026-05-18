@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, cn, Skeleton, Popover, PopoverTrigger, PopoverContent, Tooltip } from '@heroui/react'
-import { Info, Lock, Trash2, Users, Check, Plus } from 'lucide-react'
+import { Button, cn, Skeleton, Popover, PopoverTrigger, PopoverContent, Tooltip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react'
+import { Info, Lock, Trash2, Users, Check, Plus, MoreHorizontal } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 
 // Components
@@ -308,16 +308,32 @@ export default function RolePage() {
                         </div>
                     </div>
                     
-                    {/* Delete Role Button */}
-                    {activeRole && (
-                        <Button
-                            onPress={() => handleDeleteRole(activeRole)}
-                            className="h-9 px-4 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-700 font-semibold rounded-xl transition-all duration-250 border-none flex items-center gap-1.5"
-                        >
-                            <Trash2 size={16} />
-                            Xóa vai trò
-                        </Button>
-                    )}
+                    {(activeRole as any)?.is_default === 0 || (activeRole as any)?.is_default === undefined ? (
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <Button
+                                    variant="flat"
+                                    radius="sm"
+                                    isIconOnly
+                                    size="sm"
+                                    className="bg-gray-100 dark:bg-gray-700 h-8 w-8 min-w-8"
+                                >
+                                    <MoreHorizontal size={18} strokeWidth={2} className="text-gray-600 dark:text-gray-400" />
+                                </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Role actions" variant="flat">
+                                <DropdownItem
+                                    key="delete"
+                                    startContent={<Trash2 size={16} />}
+                                    onPress={() => handleDeleteRole(activeRole)}
+                                    className="text-danger font-medium"
+                                    color="danger"
+                                >
+                                    Xóa vai trò
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    ) : null}
                 </div>
 
                 {/* Tabs Section */}
@@ -372,6 +388,7 @@ export default function RolePage() {
                         onOpenCreate={handleCreateRole}
                         onRoleSelect={handleRoleSelect}
                         activeRoleId={activeRoleId}
+                        onDeleteRole={handleDeleteRole}
                     />
                 </div>
 

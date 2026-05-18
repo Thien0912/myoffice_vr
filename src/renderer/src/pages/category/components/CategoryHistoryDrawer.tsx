@@ -1,4 +1,4 @@
-import { Button, Chip, Popover, Separator } from '@heroui-v3/react'
+import { Button, Chip, cn, Popover, Separator } from '@heroui-v3/react'
 import { DrawerContentCustom, DrawerCustom, DrawerHeaderCustom } from '@renderer/components/DrawerCustom'
 import SearchInput from '@renderer/components/SearchInput'
 import { History, Plus, SlidersHorizontal, Trash2, Eye, EyeOff, X } from 'lucide-react'
@@ -277,12 +277,16 @@ export default function CategoryHistoryDrawer({ open, onClose, entityKey, title 
   const groupedData = useMemo(() => groupByDate(filteredData), [filteredData])
   const total = rawHistory.length
 
-  const filters: { id: FilterType; label: string; color: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' }[] = [
-    { id: 'all', label: 'Tất cả', color: 'default' },
-    { id: 'create', label: 'Tạo mới', color: 'success' },
-    { id: 'update', label: 'Cập nhật', color: 'primary' },
-    { id: 'delete', label: 'Đã xóa', color: 'danger' }
-  ]
+const filters: {
+  id: FilterType
+  label: string
+  color: 'default' | 'success' | 'warning' | 'danger' | 'accent'
+}[] = [
+  { id: 'all', label: 'Tất cả', color: 'default' },
+  { id: 'create', label: 'Tạo mới', color: 'success' },
+  { id: 'update', label: 'Cập nhật', color: 'accent' }, // ✅ hợp lệ
+  { id: 'delete', label: 'Đã xóa', color: 'danger' }
+]
 
   const isFiltered = activeFilter !== 'all' || timePreset !== 'all'
 
@@ -369,10 +373,18 @@ export default function CategoryHistoryDrawer({ open, onClose, entityKey, title 
                         <Chip
                           key={t.id}
                           size="sm"
-                          variant={timePreset === t.id ? 'primary' : 'secondary'}
-                          color={timePreset === t.id ? 'primary' : 'default'}
+                          variant={timePreset === t.id ? 'primary' : 'soft'}
+                          color="default"
                           onClick={() => setTimePreset(t.id)}
-                          className="cursor-pointer"
+                          className={cn(
+                            'cursor-pointer transition-all',
+                            
+                            // 👉 ACTIVE
+                            timePreset === t.id && 'bg-blue-500 text-white shadow-sm',
+                            
+                            // 👉 INACTIVE
+                            timePreset !== t.id && 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          )}
                         >
                           {t.label}
                         </Chip>

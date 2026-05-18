@@ -177,7 +177,16 @@ export const RoleDetailMembers = ({ activeRole }: RoleDetailMembersProps) => {
       </div>
 
       {/* Members Table */}
-<div className="flex-1 overflow-hidden relative min-h-0">
+<div
+  className="
+    flex-1 overflow-hidden relative min-h-0
+    [&_td]:!min-h-7
+    [&_.min-h-12]:!min-h-6
+    [&_.min-h-10]:!min-h-6
+    [&_.py-3]:!py-0.5
+    [&_.px-4]:!px-2
+  "
+>
   <TableHr
     columns={columns}
     data={currentMembers}

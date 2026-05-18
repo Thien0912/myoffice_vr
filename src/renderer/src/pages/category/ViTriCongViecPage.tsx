@@ -13,6 +13,7 @@ import TablePagination from '@renderer/components/table/TablePagination'
 import { useViTriCongViecStore } from '@renderer/store/useViTriCongViecStore'
 import { CategoryModal } from './components/CategoryModal'
 import FormViTriCongViec from './components/FormViTriCongViec'
+import { HrPrimaryButton } from '@renderer/components/hero-custom';
 import { toast } from "@heroui-v3/react";
 
 export default function ViTriCongViecPage() {
@@ -415,23 +416,20 @@ export default function ViTriCongViecPage() {
             )}
             {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
             <Button
-                            variant="light"
-                            size="sm"
-                            startContent={<History size={16} />}
-                            className="text-gray-600 font-medium"
-                            onPress={() => setLichSuOpen(true)}
-                        >
-                            Lịch sử
-                        </Button>
-            <Button
-                            color="primary"
-                            size="sm"
-                            startContent={<Plus size={18} />}
-                            className="font-medium rounded-md px-4"
-                            onPress={() => onOpenDrawerAdd()}
-                        >
-                            Thêm mới
-                        </Button>
+                variant="light"
+                size="sm"
+                startContent={<History size={16} />}
+                className="text-gray-600 font-medium"
+                onPress={() => setLichSuOpen(true)}
+              >
+                Lịch sử
+            </Button>
+            <HrPrimaryButton
+                onPress={() => onOpenDrawerAdd()}
+                startContent={<Plus size={18} />}
+            >
+                Thêm mới
+            </HrPrimaryButton>
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -442,21 +440,21 @@ export default function ViTriCongViecPage() {
           </div>
         </div>
 
-            <div className="flex-1 overflow-hidden relative bg-white min-h-0">
-                <TableHr
-          data={rows}
-          columns={visibleColumns}
-          isLoading={isLoading}
-          sortDescriptors={sortDescriptors}
-          onSortChange={setSortDescriptors}
-          columnWidths={columnWidths}
-          onColumnResize={setColumnWidth}
-          onPinColumn={setPinnedColumn}
-          selectedKeys={selectedKeys}
-          onSelectionChange={setSelectedKeys}
-          selectionMode="multiple"
-          primaryKey="id_vi_tri_cong_viec"
-        />
+        <div className="flex-1 overflow-hidden relative bg-white min-h-0">
+          <TableHr
+            data={rows}
+            columns={visibleColumns}
+            isLoading={isLoading}
+            sortDescriptors={sortDescriptors}
+            onSortChange={setSortDescriptors}
+            columnWidths={columnWidths}
+            onColumnResize={setColumnWidth}
+            onPinColumn={setPinnedColumn}
+            selectedKeys={selectedKeys}
+            onSelectionChange={setSelectedKeys}
+            selectionMode="multiple"
+            primaryKey="id_vi_tri_cong_viec"
+          />
 
         <CategoryModal
           isOpen={isOpenDrawerAdd}

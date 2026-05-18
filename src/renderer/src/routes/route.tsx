@@ -424,8 +424,8 @@ export const ROUTES = [
                     // },
                     {
                         title: 'Quản lý vai trò',
-                        description: 'Bản sao quản lý vai trò hệ thống',
-                        path: 'he-thong/vai-tro-clone',
+                        description: 'Quản lý vai trò hệ thống',
+                        path: 'he-thong/vai-tro',
                         hide: false,
                         permission: false,
                         Component: lazy(() => import('@renderer/pages/system/roles/RolePage')),

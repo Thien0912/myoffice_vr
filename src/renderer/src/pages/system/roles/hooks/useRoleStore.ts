@@ -64,7 +64,7 @@ export const useRoleStore = create<RoleStore>()(
             page: 1,
             setPage: (page) => set({ page }),
             limit: 10,
-            setLimit: (limit) => set({ limit }),
+            setLimit: (limit) => set({ limit, page: 1 }),
             search: '',
             setSearch: (search) => set({ search }),
             sortDescriptors: [],

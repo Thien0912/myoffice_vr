@@ -410,12 +410,18 @@ export const TrungTamAxios = createMockService('trungtam', trungTamData, 'id')
 
 export const TruongAxios = createMockService('truong', truongData, 'id_truong')
 
-const _khoaSvc = createMockService('khoa', khoaData, 'id_khoa')
+const _khoaSvc = createMockService('khoa', khoaData, 'id_khoa', {
+  mapPayload: (p: any) => ({
+    ...p,
+    id_truong: p.id_truong === '' ? null : p.id_truong
+  })
+})
 export const KhoaAxios = {
   ..._khoaSvc,
-  getByTruong: (idTruong: string | number) => {
-    const filtered = khoaData.filter((d) => String(d.id_truong) === String(idTruong))
-    return Promise.resolve({ success: true, data: filtered.map((d) => ({ ...d })) })
+  getByTruong: async (idTruong: string | number) => {
+    const result = await _khoaSvc.fetch({ length: 0 })
+    const filtered = (result.data || []).filter((d: any) => String(d.id_truong) === String(idTruong))
+    return { success: true, data: filtered }
   }
 }
 

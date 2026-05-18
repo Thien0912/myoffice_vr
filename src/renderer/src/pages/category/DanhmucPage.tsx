@@ -4,7 +4,7 @@ import { useDanhmucStore } from '@renderer/store/useDanhmucStore'
 import { useQueries } from '@tanstack/react-query'
 
 // Import cho các danh mục đơn vị mới
-import DonViDemoPage from './DonViDemoPage'
+import DonViPage from './DonViPage'
 import { PhongBanAxios, TrungTamAxios, TruongAxios, KhoaAxios } from './mockApi'
 import FormPhongBan from './components/FormPhongBan'
 import FormTrungTam from './components/FormTrungTam'
@@ -143,7 +143,7 @@ export default function DanhmucPage() {
             phongban,
             trungtam,
             khoa: khoaNoTruongCount, // Chỉ đếm khoa không có trường
-            truong: totalKhoa, // Tổng Trường = tổng số khoa của tất cả trường
+            truong: uniqueKhoaList.filter((khoa: any) => khoa.id_truong).length, // Tổng Trường = tổng số khoa có trường
         }
     }, [countQueries, uniqueKhoaList, khoaNoTruongCount])
 
@@ -227,7 +227,7 @@ export default function DanhmucPage() {
             const truongData = truongList?.find((t: any) => String(t.id_truong) === truongId)
             if (truongData) {
                 return (
-                    <DonViDemoPage 
+                    <DonViPage 
                         key={selectedSubItem}
                         title={`Khoa - ${truongData.ten_truong}`}
                         apiService={KhoaAxios}
@@ -243,7 +243,7 @@ export default function DanhmucPage() {
 
         switch (selectedSubItem) {
             case 'donvi_phongban': return (
-                <DonViDemoPage 
+                <DonViPage 
                     key="donvi_phongban"
                     title="Phòng ban"
                     apiService={PhongBanAxios}
@@ -253,7 +253,7 @@ export default function DanhmucPage() {
                 />
             )
             case 'donvi_trungtam': return (
-                <DonViDemoPage 
+                <DonViPage 
                     key="donvi_trungtam"
                     title="Trung tâm"
                     apiService={TrungTamAxios}
@@ -263,7 +263,7 @@ export default function DanhmucPage() {
                 />
             )
             case 'donvi_khoa': return (
-                <DonViDemoPage 
+                <DonViPage 
                     key="donvi_khoa"
                     title="Khoa"
                     apiService={KhoaAxios}

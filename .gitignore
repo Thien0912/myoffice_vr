@@ -18,3 +18,7 @@ DonviDemoPage.tsx
 TinhChatPage.tsx
 FormBaoMat.tsx
 FormTinhChat.tsx
+src/renderer/src/pages/system/roles_clone/
+src/renderer/src/pages/hr/
+src/renderer/src/pages/category/
+src/renderer/src/components

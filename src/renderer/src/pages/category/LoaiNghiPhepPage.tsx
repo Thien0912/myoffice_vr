@@ -13,6 +13,7 @@ import TablePagination from '@renderer/components/table/TablePagination'
 import { useLoaiNghiPhepStore } from '@renderer/store/useLoaiNghiPhepStore'
 import { CategoryModal } from './components/CategoryModal'
 import FormLoaiNghiPhep from './components/FormLoaiNghiPhep'
+import { HrPrimaryButton } from '@renderer/components/hero-custom';
 import { toast } from "@heroui-v3/react";
 
 export default function LoaiNghiPhepPage() {
@@ -349,15 +350,12 @@ export default function LoaiNghiPhepPage() {
                         >
                             Lịch sử
                         </Button>
-                        <Button
-                            color="primary"
-                            size="sm"
-                            startContent={<Plus size={18} />}
-                            className="font-medium rounded-md px-4"
-                            onPress={() => onOpenDrawerAdd()}
-                        >
-                            Thêm mới
-                        </Button>
+                            <HrPrimaryButton
+                                onPress={() => onOpenDrawerAdd()}
+                                startContent={<Plus size={18} />}
+                            >
+                                Thêm mới
+                            </HrPrimaryButton>
                         <TableColumnVisibility
                             columns={allColumns}
                             visibleColumns={new Set(filters.initial_visible_columns)}

@@ -17,7 +17,7 @@ export default function FormKhoa({ formData, setFormData, isEdit }: FormKhoaProp
     TruongAxios.fetch({ length: 9999 }).then((res) => {
       if (res?.success && res.data) {
         setTruongOptions([
-          { value: '', label: '-- Không thuộc trường nào --' },
+          { value: '', label: 'Không' },
           ...res.data.map((item: any) => ({
             value: String(item.id_truong),
             label: item.ten_truong
@@ -28,7 +28,11 @@ export default function FormKhoa({ formData, setFormData, isEdit }: FormKhoaProp
   }, [])
 
   const handleChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    if (name === 'id_truong' && value === '') {
+      setFormData((prev) => ({ ...prev, id_truong: null }))
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
   }
 
   return (

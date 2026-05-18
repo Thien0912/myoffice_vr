@@ -43,8 +43,10 @@ export function CategoryModal({
     })
 
     Object.entries(formData ?? {}).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value) || typeof value === 'object') {
+      if (value !== undefined) {
+        if (value === null) {
+          fd.append(key, '')
+        } else if (Array.isArray(value) || typeof value === 'object') {
           fd.append(key, JSON.stringify(value))
         } else {
           fd.append(key, String(value))
@@ -109,7 +111,9 @@ export function CategoryModal({
                       >
                         <HelpCircle size={16} />
                       </Button>
-                      <Tooltip.Content>{subtitle}</Tooltip.Content>
+                      <Tooltip.Content className="max-w-xs whitespace-normal">
+                        {subtitle}
+                      </Tooltip.Content>
                     </Tooltip>
                   )}
                 </div>

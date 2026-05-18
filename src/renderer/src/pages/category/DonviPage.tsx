@@ -1,5 +1,4 @@
-﻿import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider, Select, SelectItem } from '@heroui/react'
-import { DonviAxios } from './mockApi'
+import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
@@ -10,61 +9,84 @@ import { useEffect, useMemo, useState } from 'react'
 import ConfirmModal from '@renderer/components/ConfirmModal'
 import TableHr from '@renderer/components/table/TableHr'
 import TablePagination from '@renderer/components/table/TablePagination'
-import { useDonviStore } from '@renderer/store/useDonviStore'
 import { useAuthStore } from '@renderer/store/useAuthStore'
 import { CategoryModal } from './components/CategoryModal'
-import { SelectDropdown } from '@renderer/components/SelectDropdown'
-import FormDonvi from './components/FormDonvi'
+import { HrPrimaryButton } from '@renderer/components/hero-custom';
 import { toast } from "@heroui-v3/react";
-import { LOAI_DON_VI_DANH_MUC } from './mockApi'
+import { KhoaAxios } from './mockApi'
+import FormKhoa from './components/FormKhoa'
+import { truongData } from './data'
 
-interface DonviPageProps {
-    loaiDonVi?: string
+interface DonViPageProps {
+  title: string
+  apiService: {
+    fetch: (payload: object) => Promise<any>
+    show: (id: number | string) => Promise<any>
+    create: (data: object) => Promise<any>
+    update: (id: number | string, data: object) => Promise<any>
+    delete: (id: number | string) => Promise<any>
+  }
+  columns?: TableColumnType[]
+  formComponent: React.FC<any>
+  primaryKey: string
+  tenField: string
+  // Props cho chế độ xem Khoa của Trường
+  idTruong?: string | number
+  tenTruong?: string
+  // Props cho chế độ lọc Khoa không có trường
+  filterNoTruong?: boolean
 }
 
-export default function DonviPage({ loaiDonVi }: DonviPageProps) {
-  const {
-    filters,
-    setFilters,
-    sortDescriptors,
-    setSortDescriptors,
-    columnWidths,
-    setColumnWidth,
-    pinnedColumns,
-    setPinnedColumn,
-    reset
-  } = useDonviStore()
-
+export default function DonViPage({
+  title,
+  apiService,
+  columns: customColumns,
+  formComponent: FormComponent,
+  primaryKey,
+  tenField,
+  idTruong,
+  tenTruong,
+  filterNoTruong
+}: DonViPageProps) {
   const { user } = useAuthStore()
   const permissions = user?.permissions || []
   const isAdmin = permissions.includes('IS_ADMIN')
 
+  // Mỗi bảng có state filters riêng, không dùng chung
+  const [page, setPage] = useState(1)
+  const [length, setLength] = useState(10)
+  const [searchValue, setSearchValue] = useState('')
+
+  // Chế độ xem Khoa của một Trường cụ thể (có idTruong)
+  const isKhoaOfTruongMode = !!idTruong
+  // Chế độ xem Khoa (bất kỳ trường hợp nào: xem tất cả khoa hoặc khoa của trường)
+  const isKhoaMode = isKhoaOfTruongMode || title === 'Khoa'
+
+  // Reset page về 1 khi chuyển sang bảng khác (title thay đổi)
+  useEffect(() => {
+    setPage(1)
+    setSearchValue('')
+    setTypingValue('')
+    setSelectedKeys(new Set())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title])
+  const [sortDescriptors, setSortDescriptors] = useState<{ column: string; direction: 'ascending' | 'descending' }[]>([])
   const [recordsTotal, setRecordsTotal] = useState(0)
   const [recordsFiltered, setRecordsFiltered] = useState(0)
-  const [isResetting, setIsResetting] = useState(false)
-  const [typingValue, setTypingValue] = useState(filters.searchValue)
-  const [formData, setFormData] = useState<Record<string, object>>({})
+  const [typingValue, setTypingValue] = useState('')
+  const [formData, setFormData] = useState<Record<string, any>>({})
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
+  const [pinnedColumns, setPinnedColumns] = useState<Record<string, 'left' | 'right'>>({ stt: 'left' })
 
   // Confirm Modal State
   const [deletingId, setDeletingId] = useState<(string | number) | (string | number)[] | null>(null)
   const { isOpen: isOpenConfirm, onOpen: onOpenConfirm, onClose: onCloseConfirm } = useDisclosure()
 
-  // Drawer / Edit states (Placeholder for now)
+  // Drawer states
   const [editingId, setEditingId] = useState<string | number | null>(null)
-  const {
-    isOpen: isOpenDrawerAdd,
-    onClose: onCloseDrawerAdd,
-    onOpen: onOpenDrawerAdd
-  } = useDisclosure()
-
-    const {
-        isOpen: isOpenDrawerEdit,
-        onClose: onCloseDrawerEdit,
-        onOpen: onOpenDrawerEdit
-    } = useDisclosure()
-
-    const [lichSuOpen, setLichSuOpen] = useState(false)
+  const { isOpen: isOpenDrawerAdd, onClose: onCloseDrawerAdd, onOpen: onOpenDrawerAdd } = useDisclosure()
+  const { isOpen: isOpenDrawerEdit, onClose: onCloseDrawerEdit, onOpen: onOpenDrawerEdit } = useDisclosure()
 
   // Inline Edit State
   const [editingCell, setEditingCell] = useState<{
@@ -77,94 +99,189 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
     column: string
     value: string
   } | null>(null)
-  const {
-    isOpen: isOpenConfirmEdit,
-    onOpen: onOpenConfirmEdit,
-    onClose: onCloseConfirmEdit
-  } = useDisclosure()
+  const { isOpen: isOpenConfirmEdit, onOpen: onOpenConfirmEdit, onClose: onCloseConfirmEdit } = useDisclosure()
 
-  const {
-    data: responseData,
-    isLoading: isLoading,
-    refetch,
-    isFetching
-  } = useQuery({
-    queryKey: ['donviData', filters, sortDescriptors, loaiDonVi],
+  const [lichSuOpen, setLichSuOpen] = useState(false)
+
+  // Query danh sách chính
+  const { data: responseData, isLoading, refetch, isFetching } = useQuery({
+    queryKey: [title, page, length, searchValue, sortDescriptors, filterNoTruong],
     queryFn: async () => {
-      const payload: any = {
-        searchValue: filters.searchValue,
-        start: (filters.page - 1) * filters.length,
-        length: filters.length,
+      // Nếu filterNoTruong = true, fetch tất cả để lọc
+      const fetchLength = filterNoTruong ? 10000 : length
+      const payload = {
+        searchValue: searchValue,
+        start: filterNoTruong ? 0 : (page - 1) * length,
+        length: fetchLength,
         order: sortDescriptors.map((desc) => ({
           column: desc.column,
           dir: desc.direction === 'ascending' ? 'asc' : 'desc'
-        })),
-        searchKey: JSON.stringify({
-          selectedClassify: loaiDonVi || filters.selectedClassify
-        })
+        }))
       }
-      const response = await DonviAxios.fetch(payload)
+      const response = await apiService.fetch(payload)
+      
+      // Nếu filterNoTruong = true, lọc các khoa không có trường
+      if (filterNoTruong && response?.data) {
+        const filteredData = response.data.filter((item: any) => !item.id_truong)
+
+        // Thêm các Trường không có Khoa vào danh sách Khoa không có trường
+        const khoaWithTruongIds = new Set(
+          response.data.map((item: any) => String(item.id_truong)).filter(Boolean)
+        )
+        const truongWithoutKhoa = truongData.filter(
+          (t) => !khoaWithTruongIds.has(String(t.id_truong))
+        )
+        let nextVirtualId = -1
+        for (const t of truongWithoutKhoa) {
+          filteredData.push({
+            id_khoa: nextVirtualId--,
+            ten_khoa: t.ten_truong,
+            id_truong: null,
+            _isTruongVirtual: true,
+            _originalTruongId: t.id_truong,
+            ma_khoa: t.ma_truong || ''
+          })
+        }
+
+        // Áp dụng tìm kiếm
+        const searchedData = searchValue
+          ? filteredData.filter((item: any) =>
+              item.ten_khoa?.toLowerCase().includes(searchValue.toLowerCase())
+            )
+          : filteredData
+
+        // Phân trang thủ công
+        const start = (page - 1) * length
+        const paginatedData = searchedData.slice(start, start + length)
+        return {
+          ...response,
+          data: paginatedData,
+          recordsTotal: searchedData.length,
+          recordsFiltered: searchedData.length
+        }
+      }
+      
       return response
     }
   })
 
+  // Query khoa theo trường (khi đang xem khoa của 1 trường)
+  const { data: khoaByTruongData, isLoading: isLoadingKhoa, refetch: refetchKhoa } = useQuery({
+    queryKey: ['khoa-by-truong', idTruong, page, length, searchValue],
+    queryFn: async () => {
+      if (!idTruong) return null
+      const response = await KhoaAxios.getByTruong(idTruong)
+      // Phân trang thủ công + loại bỏ duplicate
+      const allData = response.data || []
+      // Loại bỏ duplicate dựa trên id_khoa
+      const seen = new Set()
+      const uniqueData = allData.filter((item: any) => {
+        const id = String(item.id_khoa)
+        if (seen.has(id)) return false
+        seen.add(id)
+        return true
+      })
+      const filteredData = searchValue 
+        ? uniqueData.filter((item: any) => item.ten_khoa?.toLowerCase().includes(searchValue.toLowerCase()))
+        : uniqueData
+      const start = (page - 1) * length
+      const paginatedData = filteredData.slice(start, start + length)
+      return {
+        data: paginatedData,
+        recordsTotal: uniqueData.length,
+        recordsFiltered: filteredData.length
+      }
+    },
+    enabled: isKhoaMode // Chỉ chạy khi ở chế độ xem khoa
+  })
+
+  // Cập nhật records từ đúng data source
   useEffect(() => {
-    if (responseData?.data) {
+    if (isKhoaMode && khoaByTruongData) {
+      // Đang xem khoa của trường
+      setRecordsTotal(khoaByTruongData.recordsTotal || 0)
+      setRecordsFiltered(khoaByTruongData.recordsFiltered || 0)
+    } else if (responseData?.data) {
+      // Đang xem danh sách chính
       setRecordsTotal(responseData.recordsTotal || 0)
       setRecordsFiltered(responseData.recordsFiltered || 0)
     }
-  }, [responseData])
+  }, [responseData, khoaByTruongData, isKhoaMode])
 
   // Search debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters({ searchValue: typingValue, page: 1 })
+      setSearchValue(typingValue)
+      setPage(1) // Reset về trang 1 khi search
     }, 500)
     return () => clearTimeout(timer)
   }, [typingValue])
 
   const handleResetTable = () => {
-    setIsResetting(true)
     setTypingValue('')
     setSelectedKeys(new Set())
-    reset()
-    setTimeout(() => {
-      setIsResetting(false)
-    }, 500)
+    setPage(1)
+    setLength(10)
+    setSearchValue('')
   }
 
+  const currentPrimaryKey = isKhoaMode ? 'id_khoa' : primaryKey
+  const currentData = isKhoaOfTruongMode ? khoaByTruongData?.data : responseData?.data
+  const currentApiService = isKhoaMode ? KhoaAxios : apiService
+
   const selectedRows = useMemo(() => {
-    if (!responseData?.data) return []
-    return responseData.data.filter((row: any) => selectedKeys.has(String(row.id_don_vi)))
-  }, [responseData, selectedKeys])
+    if (!currentData) return []
+    return currentData.filter((row: any) => selectedKeys.has(String(row[currentPrimaryKey])))
+  }, [currentData, selectedKeys, currentPrimaryKey])
 
   const selectedCount = selectedKeys.size
   const canCopy = selectedCount > 0
   const canEdit = selectedCount === 1
   const canDelete = selectedCount > 0
-  const canCreate = isAdmin || permissions.includes('donvi.create')
+  const canCreate = true
 
   const handleCopyRows = async () => {
     if (selectedRows.length === 0) return
     try {
       const promises = selectedRows.map((row: any) => {
-        const payload = {
-          ten_don_vi: row.ten_don_vi + ' (Copy)',
-          ten_viet_tat: row.ten_viet_tat,
-          loai: row.loai,
-          email: row.email,
-          nguoi_co_quyen_van_thu: row.nguoi_co_quyen_van_thu,
+        const payload: any = {}
+        
+        // Khi đang xem khoa (cứa trường hoặc tất cả)
+        if (isKhoaMode) {
+          payload.ten_khoa = row.ten_khoa + ' (Copy)'
+          // Nếu đang xem khoa của 1 trường cụ thể, dùng idTruong
+          // Nếu đang xem danh sách khoa (title === 'Khoa'), giữ nguyên id_truong của row (có thể null)
+          payload.id_truong = isKhoaOfTruongMode ? idTruong : row.id_truong
+          return KhoaAxios.create(payload)
         }
-        return DonviAxios.create(payload)
+        
+        if (title === 'Phòng ban') {
+          payload.ten_phong_ban = row.ten_phong_ban + ' (Copy)'
+          payload.ten_viet_tat = row.ten_viet_tat
+          payload.ten_tieng_anh = row.ten_tieng_anh
+          payload.ma_don_vi = row.ma_don_vi
+          payload.email = row.email
+        } else if (title === 'Trung tâm') {
+          payload.ten_trung_tam = row.ten_trung_tam + ' (Copy)'
+          payload.ten_viet_tat = row.ten_viet_tat
+          payload.ten_tieng_anh = row.ten_tieng_anh
+          payload.email = row.email
+        }
+        
+        return apiService.create(payload)
       })
       const results = await Promise.all(promises)
       const allSuccess = results.every((r: any) => r.success)
       if (allSuccess) {
-        toast(`Sao chép thành công ${selectedRows.length} đơn vị`, { variant: 'success' })
+        toast(`Sao chép thành công ${selectedRows.length} bản ghi`, { variant: 'success' })
         setSelectedKeys(new Set())
-        refetch()
+        if (isKhoaOfTruongMode) {
+          refetchKhoa()
+        } else {
+          refetch()
+        }
       } else {
-        toast('Một số đơn vị sao chép thất bại', { variant: 'danger' })
+        toast('Một số bản ghi sao chép thất bại', { variant: 'danger' })
       }
     } catch (error) {
       toast('Có lỗi xảy ra khi sao chép', { variant: 'danger' })
@@ -174,34 +291,16 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
   const handleOpenEdit = async () => {
     if (selectedRows.length !== 1) return
     const row = selectedRows[0]
-    setEditingId(row.id_don_vi)
+    setEditingId(row[currentPrimaryKey])
     try {
-            const detail = await DonviAxios.show(row.id_don_vi)
+      const detail = await currentApiService.show(row[currentPrimaryKey])
       if (detail.success && detail.data) {
-        setFormData({
-          ten_don_vi: detail.data.ten_don_vi || '',
-          ten_viet_tat: detail.data.ten_viet_tat || '',
-          loai: detail.data.loai || '',
-          email: detail.data.email || '',
-          nguoi_co_quyen_van_thu: detail.data.nguoi_co_quyen_van_thu || []
-        })
+        setFormData({ ...detail.data })
       } else {
-        setFormData({
-          ten_don_vi: row.ten_don_vi || '',
-          ten_viet_tat: row.ten_viet_tat || '',
-          loai: row.loai || '',
-          email: row.email || '',
-          nguoi_co_quyen_van_thu: row.nguoi_co_quyen_van_thu || []
-        })
+        setFormData({ ...row })
       }
     } catch {
-      setFormData({
-        ten_don_vi: row.ten_don_vi || '',
-        ten_viet_tat: row.ten_viet_tat || '',
-        loai: row.loai || '',
-        email: row.email || '',
-        nguoi_co_quyen_van_thu: row.nguoi_co_quyen_van_thu || []
-      })
+      setFormData({ ...row })
     }
     onOpenDrawerEdit()
   }
@@ -217,20 +316,22 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
     if (!deletingId) return
     try {
       const ids = Array.isArray(deletingId) ? deletingId : [deletingId]
-      const results = await Promise.all(
-        ids.map((id) => DonviAxios.delete(String(id)))
-      )
+      const results = await Promise.all(ids.map((id) => currentApiService.delete(String(id))))
       const failed = results.filter((r: any) => !r.success)
       if (failed.length === 0) {
-        toast(`Xóa thành công ${ids.length} đơn vị`, { variant: 'success' })
+        toast(`Xóa thành công ${ids.length} bản ghi`, { variant: 'success' })
         setSelectedKeys(new Set())
-        refetch()
+        if (isKhoaOfTruongMode) {
+          refetchKhoa()
+        } else {
+          refetch()
+        }
       } else {
         const firstError = failed[0]?.message || 'Không xác định'
         toast(`Xóa thất bại: ${firstError}`, { variant: 'danger' })
       }
     } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.message || 'Lỗi không xác định từ server'
+      const msg = error?.response?.data?.message || error?.message || 'Lỗi không xác định'
       toast(`Xóa thất bại: ${msg}`, { variant: 'danger' })
     } finally {
       onCloseConfirm()
@@ -240,13 +341,8 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
 
   const handleFinishEdit = () => {
     if (!editingCell) return
-
-    // Find original value to compare
-    const currentRow = responseData?.data.find(
-      (r: any) => r.id_don_vi === editingCell.id
-    )
+    const currentRow = currentData?.find((r: any) => r[currentPrimaryKey] === editingCell.id)
     if (!currentRow) return
-
     const originalValue = currentRow[editingCell.column]
     if (editingCell.value !== originalValue) {
       setPendingEdit(editingCell)
@@ -256,25 +352,13 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
     }
   }
 
-  // Wrapper for Select change which might not trigger standard onBlur nicely with current logic
-  const handleFinishEditWithVal = (newVal: string, column: string, id: string | number) => {
-    const currentRow = responseData?.data.find(
-      (r: any) => r.id_don_vi === id
-    )
-    if (!currentRow) return
-
-    const originalValue = currentRow[column]
-    if (String(newVal) !== String(originalValue || '')) {
-      // We set pending edit directly here since we already have the new value
-      setPendingEdit({
-        id,
-        column,
-        value: newVal
-      })
-      onOpenConfirmEdit()
+  const handleOpenCreate = () => {
+    if (isKhoaOfTruongMode && idTruong) {
+      setFormData({ id_truong: idTruong })
     } else {
-      setEditingCell(null)
+      setFormData({})
     }
+    onOpenDrawerAdd()
   }
 
   const handleSaveEdit = async () => {
@@ -285,10 +369,14 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
         column: pendingEdit.column,
         value: pendingEdit.value
       }
-      const response = await DonviAxios.update(pendingEdit.id, payload)
+      const response = await currentApiService.update(pendingEdit.id, payload)
       if (response.success) {
         toast('Cập nhật thành công', { variant: 'success' })
-        refetch()
+        if (isKhoaOfTruongMode) {
+          refetchKhoa()
+        } else {
+          refetch()
+        }
       } else {
         toast(response.message || 'Cập nhật thất bại', { variant: 'danger' })
       }
@@ -301,278 +389,195 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
     }
   }
 
-  const UNIT_TYPE_LABELS: Record<string, string> = {
-    LANH_DAO: 'Lãnh đạo',
-    PHONG: 'Phòng',
-    KHOA_BOMON: 'Khoa / Bộ môn',
-    BAN: 'Ban',
-    VIEN: 'Viện',
-    TRUNG_TAM: 'Trung tâm',
-    DON_VI_KHAC: 'Đơn vị khác',
-    PHONG_BAN: 'Phòng ban',
-    TRUONG: 'Trường',
-    KHOA: 'Khoa'
-  }
-
-  // Lấy tiêu đề trang dựa trên loại đơn vị
-  const getPageTitle = () => {
-    if (loaiDonVi && LOAI_DON_VI_DANH_MUC[loaiDonVi as keyof typeof LOAI_DON_VI_DANH_MUC]) {
-      return `Danh sách ${LOAI_DON_VI_DANH_MUC[loaiDonVi as keyof typeof LOAI_DON_VI_DANH_MUC].label}`
+  // Hàm render cell với inline editing - sử dụng ref để tránh recreate columns
+  const renderEditableCell = (value: string, row: any, column: string) => {
+    if (row._isTruongVirtual) {
+      return <div className="text-gray-700 cursor-default">{value || '--'}</div>
     }
-    return 'Danh sách đơn vị'
+    const isEditing = editingCell?.id === row[currentPrimaryKey] && editingCell?.column === column
+    if (isEditing) {
+      return (
+        <Input
+          autoFocus
+          size="sm"
+          variant="bordered"
+          value={editingCell.value}
+          onValueChange={(val) => setEditingCell((prev) => (prev ? { ...prev, value: val } : null))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleFinishEdit()
+            if (e.key === 'Escape') setEditingCell(null)
+          }}
+          onBlur={handleFinishEdit}
+          classNames={{ input: 'text-sm' }}
+        />
+      )
+    }
+    return (
+      <div
+        className={`cursor-pointer hover:text-blue-600 transition-colors ${!value ? 'text-gray-400 italic' : ''}`}
+        onDoubleClick={() => setEditingCell({ id: row[currentPrimaryKey], column, value: value || '' })}
+        title="Double click để sửa"
+      >
+        {value || '--'}
+      </div>
+    )
   }
 
-  const allColumns: TableColumnType[] = useMemo(() => {
-    return [
-      {
-        uid: 'stt',
-        name: '#',
-        sortable: false,
-        width: 50,
-        className: 'text-center w-10 p-0 font-bold',
-        pinned: 'left'
-      },
-      {
-        uid: 'ten_don_vi',
-        name: 'Tên đơn vị',
-        sortable: true,
-        width: 250,
-        render: (_, row: any) => {
-          const isEditing =
-            editingCell?.id === row.id_don_vi && editingCell?.column === 'ten_don_vi'
-          return isEditing ? (
-            <Input
-              autoFocus
-              size="sm"
-              variant="bordered"
-              value={editingCell.value}
-              onValueChange={(val) =>
-                setEditingCell((prev) => (prev ? { ...prev, value: val } : null))
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleFinishEdit()
-                if (e.key === 'Escape') setEditingCell(null)
-              }}
-              onBlur={handleFinishEdit}
-              classNames={{ input: 'text-sm' }}
-            />
-          ) : (
-            <div
-              className={`font-semibold text-gray-700 cursor-pointer hover:text-blue-600 transition-colors`}
-              onDoubleClick={() =>
-                setEditingCell({
-                  id: row.id_don_vi,
-                  column: 'ten_don_vi',
-                  value: row.ten_don_vi
-                })
-              }
-              title="Double click để sửa"
-            >
-              {row.ten_don_vi}
+  // Định nghĩa columns theo loại đơn vị - chỉ phụ thuộc vào title để đảm bảo thứ tự không đổi
+  const allColumns = useMemo((): TableColumnType[] => {
+    // PHÒNG BAN: id, ten_phong_ban, ten_viet_tat, ten_tieng_anh, ma_don_vi, email, created_at, deleted_at
+    if (title === 'Phòng ban') {
+      return [
+        {
+          uid: 'stt',
+          name: '#',
+          sortable: false,
+          width: 50,
+          className: 'text-center w-10 p-0 font-bold',
+          pinned: 'left'
+        },
+        {
+          uid: 'ten_phong_ban',
+          name: 'Tên phòng ban',
+          sortable: true,
+          width: 300,
+          render: (_, row: any) => (
+            <div className="font-semibold text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_phong_ban, row, 'ten_phong_ban')}
+            </div>
+          )
+        },
+        {
+          uid: 'ten_viet_tat',
+          name: 'Tên viết tắt',
+          sortable: true,
+          width: 150,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_viet_tat, row, 'ten_viet_tat')}
+            </div>
+          )
+        },
+        {
+          uid: 'ten_tieng_anh',
+          name: 'Tên tiếng Anh',
+          sortable: true,
+          width: 220,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_tieng_anh, row, 'ten_tieng_anh')}
+            </div>
+          )
+        },
+        {
+          uid: 'ma_don_vi',
+          name: 'Mã đơn vị',
+          sortable: true,
+          width: 120,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ma_don_vi, row, 'ma_don_vi')}
+            </div>
+          )
+        },
+        {
+          uid: 'email',
+          name: 'Email',
+          sortable: true,
+          width: 250,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.email, row, 'email')}
             </div>
           )
         }
-      },
-      {
-        uid: 'ten_viet_tat',
-        name: 'Tên viết tắt',
-        sortable: true,
-        width: 120,
-        render: (_, row: any) => {
-          const isEditing =
-            editingCell?.id === row.id_don_vi && editingCell?.column === 'ten_viet_tat'
-          return isEditing ? (
-            <Input
-              autoFocus
-              size="sm"
-              variant="bordered"
-              value={editingCell.value}
-              onValueChange={(val) =>
-                setEditingCell((prev) => (prev ? { ...prev, value: val } : null))
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleFinishEdit()
-                if (e.key === 'Escape') setEditingCell(null)
-              }}
-              onBlur={handleFinishEdit}
-              classNames={{ input: 'text-sm' }}
-            />
-          ) : (
-            <div
-              className={`text-gray-600 cursor-pointer hover:text-blue-600 transition-colors ${!row.ten_viet_tat ? 'text-gray-400 italic' : ''}`}
-              onDoubleClick={() =>
-                setEditingCell({
-                  id: row.id_don_vi,
-                  column: 'ten_viet_tat',
-                  value: row.ten_viet_tat || ''
-                })
-              }
-              title="Double click để sửa"
-            >
-              {row.ten_viet_tat || '--'}
-            </div>
-          )
-        }
-      },
-      {
-        uid: 'loai',
-        name: 'Loại',
-        sortable: true,
-        width: 150,
-        render: (_, row: any) => {
-          const isEditing =
-            editingCell?.id === row.id_don_vi && editingCell?.column === 'loai'
-
-          if (isEditing) {
-            return (
-              <Select
-                className="max-w-[200px]"
-                size="sm"
-                selectedKeys={editingCell.value ? [editingCell.value] : []}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setEditingCell((prev) => (prev ? { ...prev, value: val } : null))
-                  if (val && val !== row.loai) {
-                    setTimeout(() => {
-                      handleFinishEditWithVal(val, 'loai', row.id_don_vi)
-                    }, 100)
-                  }
-                }}
-                aria-label="Chọn loại đơn vị"
-              >
-                {Object.entries(UNIT_TYPE_LABELS).map(([key, label]) => (
-                  <SelectItem key={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </Select>
-            )
-          }
-
-          let color: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' =
-            'default'
-          switch (row.loai) {
-            case 'KHOA_BOMON':
-              color = 'primary'
-              break
-            case 'PHONG':
-              color = 'success'
-              break
-            case 'BAN':
-              color = 'warning'
-              break
-            case 'TRUNG_TAM':
-              color = 'secondary'
-              break
-            default:
-              color = 'default'
-          }
-          return (
-            <div
-              onDoubleClick={() =>
-                setEditingCell({
-                  id: row.id_don_vi,
-                  column: 'loai',
-                  value: row.loai
-                })
-              }
-              className="cursor-pointer"
-              title="Double click để sửa"
-            >
-              <Chip size="sm" color={color} variant="flat" className="capitalize">
-                {UNIT_TYPE_LABELS[row.loai]}
-              </Chip>
-            </div>
-          )
-        }
-      },
-      {
-        uid: 'email',
-        name: 'Email',
-        sortable: true,
-        width: 200,
-        render: (_, row: any) => {
-          const isEditing =
-            editingCell?.id === row.id_don_vi && editingCell?.column === 'email'
-          return isEditing ? (
-            <Input
-              autoFocus
-              size="sm"
-              variant="bordered"
-              value={editingCell.value}
-              onValueChange={(val) =>
-                setEditingCell((prev) => (prev ? { ...prev, value: val } : null))
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleFinishEdit()
-                if (e.key === 'Escape') setEditingCell(null)
-              }}
-              onBlur={handleFinishEdit}
-              classNames={{ input: 'text-sm' }}
-            />
-          ) : (
-            <div
-              className={`text-gray-600 cursor-pointer hover:text-blue-600 transition-colors ${!row.email ? 'text-gray-400 italic' : ''}`}
-              onDoubleClick={() =>
-                setEditingCell({
-                  id: row.id_don_vi,
-                  column: 'email',
-                  value: row.email || ''
-                })
-              }
-              title="Double click để sửa"
-            >
-              {row.email || '--'}
-            </div>
-          )
-        }
-      },
-      {
-        uid: 'nguoi_co_quyen_van_thu',
-        name: 'Văn thư / Lãnh đạo',
-        sortable: false,
-        width: 300,
-        render: (_, row: any) => {
-          const users = row.nguoi_co_quyen_van_thu || []
-          if (users.length === 0)
-            return <span className="text-gray-400 italic">Chưa có nhân sự</span>
-
-          // Show only first 3 then +N
-          const displayUsers = users.slice(0, 3)
-          const remaining = users.length - 3
-
-          return (
-            <div className="flex flex-col gap-1">
-              {displayUsers.map((u: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-1 text-xs">
-                  <span className="font-medium text-gray-700">{u.ql_nguoi_dung_ho_ten}</span>
-                  <span className="text-gray-400">-</span>
-                  <span className="text-gray-500 italic">{u.ql_vai_tro_ten}</span>
-                </div>
-              ))}
-              {remaining > 0 && (
-                <Tooltip
-                  content={
-                    <div className="flex flex-col gap-1 p-1">
-                      {users.slice(3).map((u: any, idx: number) => (
-                        <div key={idx} className="text-xs">
-                          <b>{u.ql_nguoi_dung_ho_ten}</b> - {u.ql_vai_tro_ten}
-                        </div>
-                      ))}
-                    </div>
-                  }
-                >
-                  <span className="text-xs text-blue-600 cursor-pointer font-medium">
-                    +{remaining} người khác
-                  </span>
-                </Tooltip>
-              )}
-            </div>
-          )
-        }
-      },
       ]
-  }, [editingCell, responseData])
+    }
+    // TRUNG TÂM: id, ten_trung_tam, ten_viet_tat, ten_tieng_anh, email, created_at, deleted_at
+    else if (title === 'Trung tâm') {
+      return [
+        {
+          uid: 'stt',
+          name: '#',
+          sortable: false,
+          width: 50,
+          className: 'text-center w-10 p-0 font-bold',
+          pinned: 'left'
+        },
+        {
+          uid: 'ten_trung_tam',
+          name: 'Tên trung tâm',
+          sortable: true,
+          width: 320,
+          render: (_, row: any) => (
+            <div className="font-semibold text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_trung_tam, row, 'ten_trung_tam')}
+            </div>
+          )
+        },
+        {
+          uid: 'ten_viet_tat',
+          name: 'Tên viết tắt',
+          sortable: true,
+          width: 150,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_viet_tat, row, 'ten_viet_tat')}
+            </div>
+          )
+        },
+        {
+          uid: 'ten_tieng_anh',
+          name: 'Tên tiếng Anh',
+          sortable: true,
+          width: 240,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_tieng_anh, row, 'ten_tieng_anh')}
+            </div>
+          )
+        },
+        {
+          uid: 'email',
+          name: 'Email',
+          sortable: true,
+          width: 280,
+          render: (_, row: any) => (
+            <div className="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.email, row, 'email')}
+            </div>
+          )
+        }
+      ]
+    }
+    // KHOA: id_khoa, id_truong, ten_khoa, created_at, deleted_at
+    else if (isKhoaMode || title.startsWith('Khoa -') || title === 'Khoa') {
+      return [
+        {
+          uid: 'stt',
+          name: '#',
+          sortable: false,
+          width: 50,
+          className: 'text-center w-10 p-0 font-bold',
+          pinned: 'left'
+        },
+        {
+          uid: 'ten_khoa',
+          name: 'Tên khoa',
+          sortable: true,
+          width: 500,
+          render: (_, row: any) => (
+            <div className="font-semibold text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
+              {renderEditableCell(row.ten_khoa, row, 'ten_khoa')}
+            </div>
+          )
+        }
+      ]
+    }
+
+    return []
+  // Phụ thuộc vào title và editingCell để inline editing hoạt động đúng
+  }, [title, editingCell, currentPrimaryKey])
 
   const columnsWithSettings = useMemo(() => {
     return allColumns.map((col) => ({
@@ -583,188 +588,168 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
   }, [allColumns, columnWidths, pinnedColumns])
 
   const visibleColumns = useMemo(() => {
-    return columnsWithSettings.filter((col) => filters.initial_visible_columns.includes(col.uid))
-  }, [columnsWithSettings, filters.initial_visible_columns])
+    return columnsWithSettings
+  }, [columnsWithSettings])
 
-  const rows = useMemo(() => responseData?.data || [], [responseData])
+  // Lấy data từ đúng source
+  const rows = useMemo(() => {
+    if (isKhoaOfTruongMode && khoaByTruongData) {
+      return khoaByTruongData.data || []
+    }
+    return responseData?.data || []
+  }, [responseData, khoaByTruongData, isKhoaOfTruongMode])
+
+  // Loading state
+  const isTableLoading = isKhoaOfTruongMode ? isLoadingKhoa : isLoading
 
   return (
     <div className="flex flex-col w-full h-full overflow-hidden relative bg-white">
       <DebugBox />
       
       <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 bg-white border-b border-gray-100">
-          <div className="flex items-center gap-2 w-full md:w-auto flex-1">
-            <Input
-              type="search"
-              placeholder="Tìm kiếm đơn vị..."
-              startContent={<Search className="text-gray-500" size={18} />}
-              value={typingValue}
-              onValueChange={setTypingValue}
-              className="w-full md:max-w-[300px]"
-              classNames={{ inputWrapper: 'h-8 bg-white border border-gray-200 rounded-lg' }}
-              endContent={isFetching && <Spinner size="sm" />}
-            />
-            {!loaiDonVi && (
-              <SelectDropdown
-                label="Loại đơn vị"
-                options={[
-                  { value: 'all', label: 'Tất cả loại' },
-                  ...Object.entries(UNIT_TYPE_LABELS).map(([key, label]) => ({
-                    value: key,
-                    label: label
-                  }))
-                ]}
-                value={filters.selectedClassify || 'all'}
-                onChange={(val) => setFilters({ selectedClassify: val as string, page: 1 })}
-                className="w-full md:max-w-[200px]"
-              />
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {canCopy && (
-              <Button
-                variant="light"
-                size="sm"
-                className="text-gray-600 font-medium"
-                onPress={handleCopyRows}
-              >
-                Sao chép
-              </Button>
-            )}
-            {canEdit && (
-              <Button
-                variant="light"
-                size="sm"
-                className="text-gray-600 font-medium"
-                onPress={handleOpenEdit}
-              >
-                Sửa
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                variant="light"
-                size="sm"
-                className="text-gray-600 font-medium"
-                onPress={handleDelete}
-              >
-                Xóa
-              </Button>
-            )}
-            {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
-            <Button
-                            variant="light"
-                            size="sm"
-                            startContent={<History size={16} />}
-                            className="text-gray-600 font-medium"
-                            onPress={() => setLichSuOpen(true)}
-                        >
-                            Lịch sử
-                        </Button>
-            {canCreate && (
-              <Button
-                color="primary"
-                size="sm"
-                startContent={<Plus size={18} />}
-                className="font-medium rounded-md px-4"
-                onPress={() => onOpenDrawerAdd()}
-              >
-                Thêm mới
-              </Button>
-            )}
-            <TableColumnVisibility
-              columns={allColumns}
-              visibleColumns={new Set(filters.initial_visible_columns)}
-              setVisibleColumns={(keys) =>
-                setFilters({ initial_visible_columns: Array.from(keys) as string[] })
-              }
-            />
-          </div>
+        <div className="flex items-center gap-2 w-full md:w-auto flex-1">
+          <Input
+            type="search"
+            placeholder={isKhoaMode && tenTruong
+              ? `Tìm kiếm khoa của ${tenTruong}...`
+              : `Tìm kiếm ${title.toLowerCase()}...`
+            }
+            startContent={<Search className="text-gray-500" size={18} />}
+            value={typingValue}
+            onValueChange={setTypingValue}
+            className="w-full md:max-w-[300px]"
+            classNames={{ inputWrapper: 'h-8 bg-white border border-gray-200 rounded-lg' }}
+            endContent={isFetching && <Spinner size="sm" />}
+          />
         </div>
 
-            <div className="flex-1 overflow-hidden relative bg-white min-h-0">
-                <TableHr
+        <div className="flex items-center gap-1.5">
+          {canCopy && (
+            <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={handleCopyRows}>
+              Sao chép
+            </Button>
+          )}
+          {canEdit && (
+            <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={handleOpenEdit}>
+              Sửa
+            </Button>
+          )}
+          {canDelete && (
+            <Button variant="light" size="sm" className="text-gray-600 font-medium" onPress={handleDelete}>
+              Xóa
+            </Button>
+          )}
+          {(canCopy || canEdit || canDelete) && <Divider orientation="vertical" className="h-6 bg-gray-200" />}
+          {canCreate && (
+            <>
+              <Button variant="light" size="sm" startContent={<History size={16} />} className="text-gray-600 font-medium" onPress={() => setLichSuOpen(true)}>
+                Lịch sử
+              </Button>
+              <HrPrimaryButton onPress={handleOpenCreate} startContent={<Plus size={18} />}>
+                Thêm mới
+              </HrPrimaryButton>
+            </>
+          )}
+          <TableColumnVisibility
+            columns={allColumns}
+            visibleColumns={new Set(allColumns.map(c => c.uid))}
+            setVisibleColumns={() => {}}
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-hidden relative bg-white min-h-0">
+        <TableHr
+          key={`table-${title}-${idTruong || 'list'}`}
           data={rows}
           columns={visibleColumns}
-          isLoading={isLoading}
+          isLoading={isTableLoading}
           sortDescriptors={sortDescriptors}
           onSortChange={setSortDescriptors}
           columnWidths={columnWidths}
-          onColumnResize={setColumnWidth}
-          onPinColumn={setPinnedColumn}
+          onColumnResize={(uid, width) => setColumnWidths({ ...columnWidths, [uid]: width })}
+          onPinColumn={(uid, pin) => setPinnedColumns({ ...pinnedColumns, [uid]: pin })}
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
           selectionMode="multiple"
-          primaryKey="id_don_vi"
+          primaryKey={isKhoaMode ? 'id_khoa' : primaryKey}
         />
 
-        <CategoryModal
-          isOpen={isOpenDrawerAdd}
-          onOpenChange={(open) => { if (!open) {
-            onCloseDrawerAdd()
-            setFormData({})
-          } }}
-          title={loaiDonVi ? `Thêm ${UNIT_TYPE_LABELS[loaiDonVi]?.toLowerCase() || 'đơn vị'}` : "Thêm đơn vị"}
-          handleSubmitApi={(_id, data) => {
-            if (loaiDonVi && data instanceof FormData) data.append('loai', loaiDonVi)
-            return DonviAxios.create(data!)
-          }}
-          formData={formData}
-          onSubmitSuccess={() => {
-            refetch()
-            setFormData({})
-          }}
-        >
-          <FormDonvi formData={formData} setFormData={setFormData} isEdit={false} loaiDonVi={loaiDonVi} />
-        </CategoryModal>
+        {isKhoaMode ? (
+          // Đang xem khoa của trường - dùng form Khoa
+          <>
+            <CategoryModal
+              isOpen={isOpenDrawerAdd}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerAdd(); setFormData({}) } }}
+              title="Thêm khoa"
+              handleSubmitApi={(_id, data) => KhoaAxios.create(data!)}
+              formData={formData}
+              onSubmitSuccess={() => { setPage(1); refetchKhoa(); setFormData({}) }}
+            >
+              <FormKhoa formData={formData} setFormData={setFormData} isEdit={false} />
+            </CategoryModal>
 
-        <CategoryModal
-          isOpen={isOpenDrawerEdit}
-          onOpenChange={(open) => { if (!open) {
-            onCloseDrawerEdit()
-            setFormData({})
-          } }}
-          title="Sửa đơn vị"
-          handleSubmitApi={(_id, data) => DonviAxios.update(String(editingId), data!)}
-          formData={formData}
-          onSubmitSuccess={() => {
-            refetch()
-            setFormData({})
-          }}
-        >
-          <FormDonvi formData={formData} setFormData={setFormData} />
-        </CategoryModal>
+            <CategoryModal
+              isOpen={isOpenDrawerEdit}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerEdit(); setFormData({}) } }}
+              title="Sửa khoa"
+              handleSubmitApi={(_id, data) => KhoaAxios.update(String(editingId), data!)}
+              formData={formData}
+              onSubmitSuccess={() => { refetchKhoa(); setFormData({}) }}
+            >
+              <FormKhoa formData={formData} setFormData={setFormData} />
+            </CategoryModal>
+          </>
+        ) : (
+          // Mặc định - dùng form của component
+          <>
+            <CategoryModal
+              isOpen={isOpenDrawerAdd}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerAdd(); setFormData({}) } }}
+              title={`Thêm ${title.toLowerCase()}`}
+              handleSubmitApi={(_id, data) => apiService.create(data!)}
+              formData={formData}
+              onSubmitSuccess={() => { setPage(1); refetch(); setFormData({}) }}
+            >
+              <FormComponent formData={formData} setFormData={setFormData} isEdit={false} />
+            </CategoryModal>
+
+            <CategoryModal
+              isOpen={isOpenDrawerEdit}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerEdit(); setFormData({}) } }}
+              title={`Sửa ${title.toLowerCase()}`}
+              handleSubmitApi={(_id, data) => apiService.update(String(editingId), data!)}
+              formData={formData}
+              onSubmitSuccess={() => { refetch(); setFormData({}) }}
+            >
+              <FormComponent formData={formData} setFormData={setFormData} />
+            </CategoryModal>
+          </>
+        )}
       </div>
 
       <TablePagination
-          page={filters.page}
-          total={recordsTotal}
-          filtered={recordsFiltered}
-          limit={filters.length}
-          onChangePage={(page) => setFilters({ page })}
-          onChangeLimit={(length) => setFilters({ length, page: 1 })}
-        />
+        page={page}
+        total={recordsTotal}
+        filtered={recordsFiltered}
+        limit={length}
+        onChangePage={setPage}
+        onChangeLimit={(newLength) => { setLength(newLength); setPage(1) }}
+      />
 
       <ConfirmModal
         isOpen={isOpenConfirm}
         onClose={onCloseConfirm}
         onConfirm={onConfirmDelete}
         title="Xác nhận xóa"
-        content={
-          Array.isArray(deletingId)
-            ? `Bạn có chắc chắn muốn xóa ${deletingId.length} đơn vị đã chọn không? Hành động này không thể hoàn tác.`
-            : 'Bạn có chắc chắn muốn xóa đơn vị này không? Hành động này không thể hoàn tác.'
-        }
+        content={Array.isArray(deletingId)
+          ? `Bạn có chắc chắn muốn xóa ${deletingId.length} bản ghi đã chọn không?`
+          : `Bạn có chắc chắn muốn xóa ${title.toLowerCase()} này không?`}
         isDanger={true}
       />
       <ConfirmModal
         isOpen={isOpenConfirmEdit}
-        onClose={() => {
-          onCloseConfirmEdit()
-          setPendingEdit(null)
-          setEditingCell(null)
-        }}
+        onClose={() => { onCloseConfirmEdit(); setPendingEdit(null); setEditingCell(null) }}
         onConfirm={handleSaveEdit}
         title="Xác nhận sửa đổi"
         content="Bạn có chắc chắn muốn lưu thay đổi này không?"
@@ -773,7 +758,7 @@ export default function DonviPage({ loaiDonVi }: DonviPageProps) {
       <CategoryHistoryDrawer
         open={lichSuOpen}
         onClose={() => setLichSuOpen(false)}
-        entityKey="donvi"
+        entityKey={isKhoaMode ? 'khoa' : title === 'Phòng ban' ? 'phongban' : title === 'Trung tâm' ? 'trungtam' : 'truong'}
       />
     </div>
   )
