@@ -2,7 +2,7 @@
 import { Button, Input, Slider, Divider, cn } from '@heroui/react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Printer, RefreshCw, Type, User, Download, Upload, Camera, CreditCard } from 'lucide-react'
-import domtoimage from 'dom-to-image'
+import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import { useReactToPrint } from 'react-to-print'
 import bgCard from '@renderer/assets/images/idcard/id card nhan vien ver 5_Folder/id card nhan vien 6.png'
@@ -40,7 +40,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
   const [positions, setPositions] = useState({
     qrTop: -1,
     qrRight: -0.15,
-    qrSize: 40,
+    qrSize: 39,
     contentTop: 56,
     contentLeft: 11,
     avatarTop: 16,
@@ -95,41 +95,67 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
     }
   }, [initialEmployee])
 
-  // Hàm làm sạch oklch khỏi CSS
-  const sanitizeOklch = (doc: Document) => {
-    const allElements = doc.querySelectorAll('*')
-    allElements.forEach((el) => {
-      const element = el as HTMLElement
-      // Reset tất cả inline styles có thể chứa oklch
-      element.style.cssText = element.style.cssText.replace(/oklch\([^)]+\)/g, '#000000')
-    })
-
-    // Xóa tất cả external stylesheets
-    const stylesheets = doc.querySelectorAll('link[rel="stylesheet"]')
-    stylesheets.forEach((sheet) => sheet.remove())
-
-    // Xóa tất cả style tags
-    const styleTags = doc.querySelectorAll('style')
-    styleTags.forEach((tag) => tag.remove())
-  }
-
   const handleDownloadPDF = async () => {
     if (!cardRef.current) return
 
     try {
       toast('Đang xử lý', { description: 'Vui lòng chờ trong giây lát...', variant: 'default' })
-      
-      const dataUrl = await domtoimage.toPng(cardRef.current, {
-        quality: 1,
-        width: 84.68 * 3.78 * 2,
-        height: 53.2 * 3.78 * 2,
-        style: {
-          transform: 'scale(2)',
-          transformOrigin: 'top left',
-          width: '84.68mm',
-          height: '53.2mm'
+
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 4,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        backgroundColor: '#ffffff',
+        onclone: (doc) => {
+          doc.querySelectorAll('style').forEach((tag) => {
+            tag.textContent = tag.textContent?.replace(/oklch\([^)]+\)/g, '#000000') ?? ''
+          })
+          doc.querySelectorAll('*').forEach((el) => {
+            const htmlEl = el as HTMLElement
+            if (htmlEl.style) {
+              htmlEl.style.cssText = htmlEl.style.cssText.replace(/oklch\([^)]+\)/g, '#000000')
+            }
+          })
+          doc.querySelectorAll('[data-pdf-offset]').forEach((el) => {
+            const htmlEl = el as HTMLElement
+            const offset = parseFloat(htmlEl.getAttribute('data-pdf-offset') || '0')
+            if (offset && htmlEl.style.top) {
+              const currentTop = parseFloat(htmlEl.style.top)
+              if (!isNaN(currentTop)) {
+                htmlEl.style.top = `${currentTop + offset}px`
+              }
+            }
+          })
+          doc.querySelectorAll('[data-pdf-style]').forEach((el) => {
+            const htmlEl = el as HTMLElement
+            const overrides = htmlEl.getAttribute('data-pdf-style') || ''
+            overrides.split(';').forEach((rule) => {
+              const [prop, val] = rule.split(':').map((s) => s.trim())
+              if (prop && val) {
+                htmlEl.style[prop as any] = val
+              }
+            })
+          })
+          const avatarEl = doc.querySelector<HTMLElement>('[data-avatar]')
+          if (avatarEl) {
+            avatarEl.style.transform = 'translate(-2.5px, -4.5px) translateY(-1.5px)'
+            const img = avatarEl.querySelector('img')
+            if (img) {
+              const src = img.getAttribute('src')
+              if (src) {
+                avatarEl.style.backgroundImage = `url(${src})`
+                avatarEl.style.backgroundSize = 'cover'
+                avatarEl.style.backgroundPosition = 'center'
+                img.style.display = 'none'
+              }
+            }
+          }
+          
         }
       })
+
+      const dataUrl = canvas.toDataURL('image/png')
 
       const pdf = new jsPDF({
         orientation: 'landscape',
@@ -140,7 +166,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
       pdf.addImage(dataUrl, 'PNG', 0, 0, 84.68, 53.2)
       pdf.save(`${employee.ho_va_ten}_the_nhan_vien.pdf`)
 
-      toast('Thành công', { description: 'Đã tải xuống file PDF', variant: 'success' })
+      toast('Thành công', { description: 'Đã có thể tải xuống file PDF', variant: 'success' })
     } catch (error) {
       console.error('Lỗi khi xuất PDF:', error)
       toast('Lỗi', { description: 'Không thể tạo file PDF', variant: 'danger' })
@@ -180,7 +206,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
       infoPaddingLeft: 10,
       idTop: 8.6,
       idLeft: 7,
-      nameTop: 26.5,
+    nameTop: 24,
       nameLeft: 7,
       academicTop: 47,
       academicLeft: 7,
@@ -263,6 +289,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
 
               <div
                 className="absolute w-[18%] h-[28%] z-10 flex justify-center items-center"
+                data-pdf-style="transform: translateX(-0.5px)"
                 style={{ top: `${positions.qrTop}%`, right: `${positions.qrRight}%` }}
               >
                 <QRCodeSVG
@@ -285,6 +312,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                 {/* Avatar */}
                 <div
                   className="w-[76px] h-[114px] bg-white border border-gray-100 overflow-hidden shrink-0 rounded-[4px]"
+                  data-avatar
                   style={{ marginTop: `${positions.avatarTop}px`,
                   transform: `translate(-2.5px, -4.5px)`}}
                 >
@@ -300,6 +328,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                 {/* Info Area */}
                 <div
                   className="flex-1 relative"
+                  data-pdf-style="transform: translateY(-8px)"
                   style={{
                     marginLeft: `${positions.infoLeft}px`,
                     marginTop: `${positions.infoTop}px`,
@@ -311,23 +340,25 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                     className="absolute text-[#111111]"
                     style={{
                       top: `${positions.idTop - 20}px`,
-                      left: `${positions.idLeft}px`
+                      left: `${positions.idLeft}px`,
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    <span style={{ fontSize: `${fontSizes.idLabel}pt`, fontFamily: 'Acumin Pro', display: 'inline-block',
+                    <span style={{ fontSize: `${fontSizes.idLabel}pt`, fontFamily: 'Acumin Pro',
                       transform: 'scaleY(1.1)',
                       transformOrigin: 'bottom'
-                      }}>Mã số / ID:</span>{' '}
-                    <span style={{ fontSize: `${fontSizes.idValue}pt`, fontFamily: 'Acumin Pro', fontWeight: 'bold', position: 'relative', top: '0.5px', display: 'inline-block',
-                      transform: 'scaleY(1.1)',
-                      transformOrigin: 'bottom' }}>
-                      {employee.ma_nhan_vien}
+                    }}>
+                      Mã số / ID:{' '}
+                      <span style={{ fontSize: `${fontSizes.idValue}pt`, fontWeight: 'bold', marginLeft: '6px' }}>
+                        {employee.ma_nhan_vien}
+                      </span>
                     </span>
                   </div>
 
                   {/* Name label */}
                   <div
                     className="absolute"
+                    data-pdf-style="transform: translateY(3px)"
                     style={{
                       top: `${positions.nameTop - 20}px`,
                       left: `${positions.nameLeft}px`
@@ -350,11 +381,12 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   {/* Name value */}
                   <div
                     className="absolute text-[#ed3235]"
+                    data-pdf-offset="-4"
                     style={{
                       fontSize: `${fontSizes.name}pt`,
                       fontWeight: 'bold',
                       fontFamily: 'Acumin Pro',
-                      top: `${positions.nameTop}px`,
+                      top: `${positions.nameTop + 2}px`,
                       left: `${positions.nameLeft}px`,
                       display: 'inline-block',
                       transform: 'scaleY(1.2)',
@@ -367,6 +399,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   {/* Academic label */}
                   <div
                     className="absolute"
+                    data-pdf-style="transform: translateY(3px)"
                     style={{
                       top: `${positions.academicTop - 6}px`,
                       left: `${positions.academicLeft}px`
@@ -392,6 +425,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   {/* Academic value (DB) */}
                   <div
                     className="absolute text-[#111111]"
+                    data-pdf-style="transform: translateY(3px)"
                     style={{
                       fontSize: `${fontSizes.academic}pt`,
                       top: `${positions.academicTop + 12}px`,
@@ -409,8 +443,9 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   {/* Position label */}
                   <div
                     className="absolute absolute text-[#111111]"
+                    data-pdf-style="transform: translateY(4px)"
                     style={{
-                      top: `${positions.positionTop + 7}px`,
+                      top: `${positions.positionTop + 8}px`,
                       left: `${positions.positionLeft}px`
                     }}
                   >
@@ -434,9 +469,10 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   {/* Position value (DB) */}
                   <div
                     className="absolute text-[#111111]"
+                    data-pdf-style="transform: translateY(4px)"
                     style={{
                       fontSize: `${fontSizes.position}pt`,
-                      top: `${positions.positionTop + 25}px`,
+                      top: `${positions.positionTop + 26}px`,
                       left: `${positions.positionLeft}px`,
                       display: 'inline-block',
                       transform: 'scaleY(1.1)',
@@ -451,8 +487,9 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   {/* Unit label */}
                   <div
                     className="absolute text-[#111111]"
+                    data-pdf-style="transform: translateY(5px)"
                     style={{
-                      top: `${positions.unitTop + 8}px`,
+                      top: `${positions.unitTop + 10}px`,
                       left: `${positions.unitLeft}px`
                     }}
                   >
@@ -476,9 +513,10 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   {/* Unit value (DB) */}
                   <div
                     className="absolute text-[#111111]"
+                    data-pdf-style="transform: translateY(5px)"
                     style={{
                       fontSize: `${fontSizes.unit}pt`,
-                      top: `${positions.unitTop + 25}px`,
+                      top: `${positions.unitTop + 27}px`,
                       left: `${positions.unitLeft}px`,
                       fontWeight: '600',
                       fontFamily: 'Acumin Pro',
