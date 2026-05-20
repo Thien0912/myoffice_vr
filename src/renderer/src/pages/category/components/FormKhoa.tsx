@@ -50,6 +50,7 @@ export default function FormKhoa({ formData, setFormData, isEdit }: FormKhoaProp
             name="id_truong"
             value={formData.id_truong || ''}
             options={truongOptions}
+            hideUnselect
             onChange={(val) => handleChange('id_truong', val)}
           />
         </div>

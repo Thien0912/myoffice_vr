@@ -27,6 +27,7 @@ type Props = {
   radius?: FloatingLabelRadius
   labelPlacement?: 'inside' | 'outside'
   placeholder?: string
+  hideUnselect?: boolean
   classNames?: {
     base?: string
     trigger?: string
@@ -51,6 +52,7 @@ export function SelectFloatingLabel({
   radius = 'sm',
   labelPlacement = 'inside',
   placeholder,
+  hideUnselect = false,
   classNames
 }: Props) {
   const id = useId()
@@ -291,7 +293,12 @@ export function SelectFloatingLabel({
   }
 
   const getLabel = (v: string) => allOptions.find((opt) => opt.value === v)?.label || v
-  const hasValue = selected.some((v) => v !== '' && v !== null && v !== undefined)
+  const isEmptyValid = allOptions.some((opt) => opt.value === '')
+  const hasValue = selected.some((v) => {
+    if (v === null || v === undefined) return false
+    if (v === '') return isEmptyValid
+    return true
+  })
   const maxVisible = 2
   const hiddenCount = selected.length - maxVisible
   const visibleTags = selected.slice(0, maxVisible)
@@ -478,7 +485,7 @@ export function SelectFloatingLabel({
               </div>
 
               {/* Option rỗng để unselect */}
-              {!multiple && search === '' && (
+              {!multiple && search === '' && !hideUnselect && (
                 <div
                   className={cn(
                     'px-3 py-2 cursor-pointer text-sm text-foreground-500 hover:bg-default-100 transition-colors italic border-b border-dashed border-divider',

@@ -413,9 +413,10 @@ export const TruongAxios = createMockService('truong', truongData, 'id_truong')
 const _khoaSvc = createMockService('khoa', khoaData, 'id_khoa')
 export const KhoaAxios = {
   ..._khoaSvc,
-  getByTruong: (idTruong: string | number) => {
-    const filtered = khoaData.filter((d) => String(d.id_truong) === String(idTruong))
-    return Promise.resolve({ success: true, data: filtered.map((d) => ({ ...d })) })
+  getByTruong: async (idTruong: string | number) => {
+    const res = await _khoaSvc.fetch({ length: 10000 })
+    const filtered = (res.data || []).filter((d: any) => String(d.id_truong) === String(idTruong))
+    return { success: true, data: filtered.map((d: any) => ({ ...d })) }
   }
 }
 

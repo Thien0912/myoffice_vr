@@ -139,11 +139,11 @@ export default function DanhmucPage() {
         const totalKhoa = uniqueKhoaList.length // Tổng số khoa của tất cả trường (đã loại bỏ duplicate)
         
         return {
-            donvi: phongban + trungtam + khoaNoTruongCount + totalKhoa, // Tổng = Phòng ban + Trung tâm + Khoa (không trường) + Tổng khoa trong trường
+            donvi: phongban + trungtam + totalKhoa, // Tổng = Phòng ban + Trung tâm + Tất cả khoa
             phongban,
             trungtam,
-            khoa: khoaNoTruongCount, // Chỉ đếm khoa không có trường
-            truong: totalKhoa, // Tổng Trường = tổng số khoa của tất cả trường
+            khoa: khoaNoTruongCount, // Chỉ đếm khoa không có trường (standalone)
+            truong: totalKhoa - khoaNoTruongCount, // Chỉ đếm khoa thuộc trường, không tính standalone
         }
     }, [countQueries, uniqueKhoaList, khoaNoTruongCount])
 

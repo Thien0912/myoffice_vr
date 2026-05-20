@@ -3,7 +3,7 @@ import { coquanAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Plus, Search } from 'lucide-react'
 import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
@@ -94,6 +94,8 @@ export default function CoQuanPage() {
         }
     })
 
+    const queryClient = useQueryClient()
+
     useEffect(() => {
         if (responseData?.data) {
             setRecordsTotal(responseData.recordsTotal || 0)
@@ -143,7 +145,7 @@ export default function CoQuanPage() {
             if (allSuccess) {
                 toast(`Sao chép thành công ${selectedRows.length} cơ quan`, { variant: 'success' })
                 setSelectedKeys(new Set())
-                refetch()
+                refetch(); queryClient.invalidateQueries({ queryKey: ["count"] })
             } else {
                 toast('Một số cơ quan sao chép thất bại', { variant: 'danger' })
             }
@@ -193,7 +195,7 @@ export default function CoQuanPage() {
             if (failed.length === 0) {
                 toast(`Xóa thành công ${ids.length} cơ quan`, { variant: 'success' })
                 setSelectedKeys(new Set())
-                refetch()
+                refetch(); queryClient.invalidateQueries({ queryKey: ["count"] })
             } else {
                 const firstError = failed[0]?.message || 'Không xác định'
                 toast(`Xóa thất bại: ${firstError}`, { variant: 'danger' })
@@ -232,7 +234,7 @@ export default function CoQuanPage() {
             })
             if (response.success) {
                 toast('Cập nhật thành công', { variant: 'success' })
-                refetch()
+                refetch(); queryClient.invalidateQueries({ queryKey: ["count"] })
             } else {
                 toast(response.message || 'Cập nhật thất bại', { variant: 'danger' })
             }
@@ -417,7 +419,7 @@ export default function CoQuanPage() {
                     handleSubmitApi={(_id, data) => coquanAxios.create(data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
-                        refetch()
+                        refetch(); queryClient.invalidateQueries({ queryKey: ["count"] })
                         setFormData({})
                     }}
                 >
@@ -434,7 +436,7 @@ export default function CoQuanPage() {
                     handleSubmitApi={(_id, data) => coquanAxios.update(String(editingId), data!)}
                     formData={formData}
                     onSubmitSuccess={() => {
-                        refetch()
+                        refetch(); queryClient.invalidateQueries({ queryKey: ["count"] })
                         setFormData({})
                     }}
                 >

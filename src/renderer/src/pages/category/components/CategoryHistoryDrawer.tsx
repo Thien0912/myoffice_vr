@@ -277,10 +277,10 @@ export default function CategoryHistoryDrawer({ open, onClose, entityKey, title 
   const groupedData = useMemo(() => groupByDate(filteredData), [filteredData])
   const total = rawHistory.length
 
-  const filters: { id: FilterType; label: string; color: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' }[] = [
+  const filters: { id: FilterType; label: string; color: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'solid' }[] = [
     { id: 'all', label: 'Tất cả', color: 'default' },
     { id: 'create', label: 'Tạo mới', color: 'success' },
-    { id: 'update', label: 'Cập nhật', color: 'primary' },
+    { id: 'update', label: 'Cập nhật', color: 'warning' },
     { id: 'delete', label: 'Đã xóa', color: 'danger' }
   ]
 
@@ -343,10 +343,16 @@ export default function CategoryHistoryDrawer({ open, onClose, entityKey, title 
                         <Chip
                           key={f.id}
                           size="sm"
-                          variant={activeFilter === f.id ? 'primary' : 'secondary'}
-                          color={f.color}
+                          variant={activeFilter === f.id ? 'primary' : 'soft'}
+                          color={activeFilter === f.id && f.id !== 'all' ? f.color : 'default'}
                           onClick={() => setActiveFilter(f.id)}
-                          className="cursor-pointer"
+                          className={
+                            activeFilter === f.id
+                              ? f.id === 'all'
+                                ? 'cursor-pointer bg-blue-500 text-white border-blue-500'
+                                : 'cursor-pointer'
+                              : 'cursor-pointer'
+                          }
                         >
                           {f.label}
                         </Chip>
@@ -367,15 +373,19 @@ export default function CategoryHistoryDrawer({ open, onClose, entityKey, title 
                         { id: 'custom', label: 'Tuỳ chọn' }
                       ] as { id: TimePreset; label: string }[]).map((t) => (
                         <Chip
-                          key={t.id}
-                          size="sm"
-                          variant={timePreset === t.id ? 'primary' : 'secondary'}
-                          color={timePreset === t.id ? 'primary' : 'default'}
-                          onClick={() => setTimePreset(t.id)}
-                          className="cursor-pointer"
-                        >
-                          {t.label}
-                        </Chip>
+  key={t.id}
+  size="sm"
+  variant={timePreset === t.id ? 'solid' : 'bordered'}
+  color="default"
+  onClick={() => setTimePreset(t.id)}
+  className={
+    timePreset === t.id
+      ? 'cursor-pointer bg-blue-500 text-white'
+      : 'cursor-pointer'
+  }
+>
+  {t.label}
+</Chip>
                       ))}
                     </div>
 

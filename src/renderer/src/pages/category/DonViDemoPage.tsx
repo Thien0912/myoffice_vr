@@ -2,7 +2,7 @@ import { Button, Chip, Input, Spinner, Tooltip, useDisclosure, Divider } from '@
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
 import { TableColumnType } from '@renderer/components/table/TableTypes'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Plus, Search } from 'lucide-react'
 import CategoryHistoryDrawer from './components/CategoryHistoryDrawer'
 import { useEffect, useMemo, useState } from 'react'
@@ -49,6 +49,12 @@ export default function DonViDemoPage({
   const { user } = useAuthStore()
   const permissions = user?.permissions || []
   const isAdmin = permissions.includes('IS_ADMIN')
+  const queryClient = useQueryClient()
+
+  const invalidateSidebarCounts = () => {
+    queryClient.invalidateQueries({ queryKey: ['count'] })
+    queryClient.invalidateQueries({ queryKey: ['khoa', 'all'] })
+  }
 
   // Mỗi bảng có state filters riêng, không dùng chung
   const [page, setPage] = useState(1)
@@ -251,6 +257,7 @@ export default function DonViDemoPage({
         } else {
           refetch()
         }
+        invalidateSidebarCounts()
       } else {
         toast('Một số bản ghi sao chép thất bại', { variant: 'danger' })
       }
@@ -297,6 +304,7 @@ export default function DonViDemoPage({
         } else {
           refetch()
         }
+        invalidateSidebarCounts()
       } else {
         const firstError = failed[0]?.message || 'Không xác định'
         toast(`Xóa thất bại: ${firstError}`, { variant: 'danger' })
@@ -604,7 +612,12 @@ export default function DonViDemoPage({
               <Button variant="light" size="sm" startContent={<History size={16} />} className="text-gray-600 font-medium" onPress={() => setLichSuOpen(true)}>
                 Lịch sử
               </Button>
-              <Button color="primary" size="sm" startContent={<Plus size={18} />} className="font-medium rounded-md px-4" onPress={() => onOpenDrawerAdd()}>
+              <Button color="primary" size="sm" startContent={<Plus size={18} />} className="font-medium rounded-md px-4" onPress={() => {
+                if (isKhoaOfTruongMode) {
+                  setFormData({ id_truong: String(idTruong) })
+                }
+                onOpenDrawerAdd()
+              }}>
                 Thêm mới
               </Button>
             </>
@@ -634,19 +647,16 @@ export default function DonViDemoPage({
           primaryKey={isKhoaMode ? 'id_khoa' : primaryKey}
         />
 
-        {isKhoaMode ? (
-          // Đang xem khoa của trường - dùng form Khoa
+        {isKhoaOfTruongMode ? (
+          // Đang xem khoa của 1 trường cụ thể
           <>
             <CategoryModal
               isOpen={isOpenDrawerAdd}
               onOpenChange={(open) => { if (!open) { onCloseDrawerAdd(); setFormData({}) } }}
               title="Thêm khoa"
-              handleSubmitApi={(_id, data) => {
-                if (data instanceof FormData) data.append('id_truong', String(idTruong))
-                return KhoaAxios.create(data!)
-              }}
+              handleSubmitApi={(_id, data) => KhoaAxios.create(data!)}
               formData={formData}
-              onSubmitSuccess={() => { refetchKhoa(); setFormData({}) }}
+              onSubmitSuccess={() => { refetchKhoa(); setFormData({}); invalidateSidebarCounts() }}
             >
               <FormKhoa formData={formData} setFormData={setFormData} isEdit={false} />
             </CategoryModal>
@@ -657,7 +667,32 @@ export default function DonViDemoPage({
               title="Sửa khoa"
               handleSubmitApi={(_id, data) => KhoaAxios.update(String(editingId), data!)}
               formData={formData}
-              onSubmitSuccess={() => { refetchKhoa(); setFormData({}) }}
+              onSubmitSuccess={() => { refetchKhoa(); setFormData({}); invalidateSidebarCounts() }}
+            >
+              <FormKhoa formData={formData} setFormData={setFormData} />
+            </CategoryModal>
+          </>
+        ) : isKhoaMode ? (
+          // Khoa standalone (không thuộc trường nào)
+          <>
+            <CategoryModal
+              isOpen={isOpenDrawerAdd}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerAdd(); setFormData({}) } }}
+              title="Thêm khoa"
+              handleSubmitApi={(_id, data) => KhoaAxios.create(data!)}
+              formData={formData}
+              onSubmitSuccess={() => { refetch(); setFormData({}); invalidateSidebarCounts() }}
+            >
+              <FormKhoa formData={formData} setFormData={setFormData} isEdit={false} />
+            </CategoryModal>
+
+            <CategoryModal
+              isOpen={isOpenDrawerEdit}
+              onOpenChange={(open) => { if (!open) { onCloseDrawerEdit(); setFormData({}) } }}
+              title="Sửa khoa"
+              handleSubmitApi={(_id, data) => KhoaAxios.update(String(editingId), data!)}
+              formData={formData}
+              onSubmitSuccess={() => { refetch(); setFormData({}); invalidateSidebarCounts() }}
             >
               <FormKhoa formData={formData} setFormData={setFormData} />
             </CategoryModal>
@@ -671,7 +706,7 @@ export default function DonViDemoPage({
               title={`Thêm ${title.toLowerCase()}`}
               handleSubmitApi={(_id, data) => apiService.create(data!)}
               formData={formData}
-              onSubmitSuccess={() => { refetch(); setFormData({}) }}
+              onSubmitSuccess={() => { refetch(); setFormData({}); invalidateSidebarCounts() }}
             >
               <FormComponent formData={formData} setFormData={setFormData} isEdit={false} />
             </CategoryModal>
@@ -682,7 +717,7 @@ export default function DonViDemoPage({
               title={`Sửa ${title.toLowerCase()}`}
               handleSubmitApi={(_id, data) => apiService.update(String(editingId), data!)}
               formData={formData}
-              onSubmitSuccess={() => { refetch(); setFormData({}) }}
+              onSubmitSuccess={() => { refetch(); setFormData({}); invalidateSidebarCounts() }}
             >
               <FormComponent formData={formData} setFormData={setFormData} />
             </CategoryModal>

@@ -47,8 +47,10 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
     infoTop: 5,
     infoLeft: 2.1,
     infoPaddingLeft: 10,
-    idTop: 8.6,
-    idLeft: 7,
+    idLabelTop: -12,
+    idLabelLeft: 7,
+    idValueTop: -11,
+    idValueLeft: 55,
     nameTop: 26.5,
     nameLeft: 7,
     academicTop: 47,
@@ -101,59 +103,80 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
     try {
       toast('Đang xử lý', { description: 'Vui lòng chờ trong giây lát...', variant: 'default' })
 
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 4,
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        backgroundColor: '#ffffff',
-        onclone: (doc) => {
-          doc.querySelectorAll('style').forEach((tag) => {
-            tag.textContent = tag.textContent?.replace(/oklch\([^)]+\)/g, '#000000') ?? ''
+      const iframe = document.createElement('iframe')
+      iframe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:800px;height:600px'
+      document.body.appendChild(iframe)
+      const iframeDoc = iframe.contentDocument!
+
+      const tags: string[] = []
+      Array.from(document.styleSheets).forEach(sheet => {
+        try {
+          Array.from(sheet.cssRules).forEach(rule => {
+            tags.push(`<style>${rule.cssText
+              .replace(/lab\([^)]+\)/g, '#000')
+              .replace(/oklch\([^)]+\)/g, '#000')
+              .replace(/oklab\([^)]+\)/g, '#000')
+            }</style>`)
           })
-          doc.querySelectorAll('*').forEach((el) => {
-            const htmlEl = el as HTMLElement
-            if (htmlEl.style) {
-              htmlEl.style.cssText = htmlEl.style.cssText.replace(/oklch\([^)]+\)/g, '#000000')
-            }
-          })
-          doc.querySelectorAll('[data-pdf-offset]').forEach((el) => {
-            const htmlEl = el as HTMLElement
-            const offset = parseFloat(htmlEl.getAttribute('data-pdf-offset') || '0')
-            if (offset && htmlEl.style.top) {
-              const currentTop = parseFloat(htmlEl.style.top)
-              if (!isNaN(currentTop)) {
-                htmlEl.style.top = `${currentTop + offset}px`
-              }
-            }
-          })
-          doc.querySelectorAll('[data-pdf-style]').forEach((el) => {
-            const htmlEl = el as HTMLElement
-            const overrides = htmlEl.getAttribute('data-pdf-style') || ''
-            overrides.split(';').forEach((rule) => {
-              const [prop, val] = rule.split(':').map((s) => s.trim())
-              if (prop && val) {
-                htmlEl.style[prop as any] = val
-              }
-            })
-          })
-          const avatarEl = doc.querySelector<HTMLElement>('[data-avatar]')
-          if (avatarEl) {
-            avatarEl.style.transform = 'translate(-2.5px, -4.5px) translateY(-1.5px)'
-            const img = avatarEl.querySelector('img')
-            if (img) {
-              const src = img.getAttribute('src')
-              if (src) {
-                avatarEl.style.backgroundImage = `url(${src})`
-                avatarEl.style.backgroundSize = 'cover'
-                avatarEl.style.backgroundPosition = 'center'
-                img.style.display = 'none'
-              }
-            }
+        } catch {}
+      })
+
+      iframeDoc.open()
+      iframeDoc.write(`<html><head>${tags.join('')}<style>#card-root{width:340px;height:216px;overflow:hidden}</style></head><body><div id="card-root">${cardRef.current?.outerHTML || ''}</div></body></html>`)
+      iframeDoc.close()
+      await new Promise(r => setTimeout(r, 100))
+
+      const colorMap: Record<string, string> = {
+        'text-red-600': '#dc2626',
+        'text-gray-900': '#111827',
+        'text-gray-700': '#374151',
+        'text-gray-600': '#4b5563',
+        'text-gray-500': '#6b7280',
+        'text-blue-800': '#1e40af',
+        'text-blue-600': '#2563eb',
+      }
+      iframeDoc.querySelectorAll('[class*="text-"]').forEach((el) => {
+        const htmlEl = el as HTMLElement
+        for (const [cls, hex] of Object.entries(colorMap)) {
+          if (htmlEl.classList.contains(cls)) {
+            htmlEl.style.color = hex
           }
-          
         }
       })
+      iframeDoc.querySelectorAll('[data-pdf-offset]').forEach((el) => {
+        const htmlEl = el as HTMLElement
+        const offset = parseFloat(htmlEl.getAttribute('data-pdf-offset') || '0')
+        if (offset && htmlEl.style.top) {
+          const currentTop = parseFloat(htmlEl.style.top)
+          if (!isNaN(currentTop)) htmlEl.style.top = `${currentTop + offset}px`
+        }
+      })
+      iframeDoc.querySelectorAll('[data-pdf-style]').forEach((el) => {
+        const htmlEl = el as HTMLElement
+        const overrides = htmlEl.getAttribute('data-pdf-style') || ''
+        overrides.split(';').forEach((rule) => {
+          const [prop, val] = rule.split(':').map((s) => s.trim())
+          if (prop && val) htmlEl.style[prop as any] = val
+        })
+      })
+
+      iframeDoc.querySelectorAll('[data-print-border="none"]').forEach((el) => {
+        (el as HTMLElement).style.border = 'none'
+      })
+
+      const avatarEl = iframeDoc.querySelector<HTMLElement>('[data-avatar]')
+      if (avatarEl) {
+        avatarEl.style.transform = 'translate(-2.5px, -4.5px)'
+        avatarEl.style.overflow = 'visible'
+      }
+
+      await new Promise(r => setTimeout(r, 300))
+
+      const target = iframeDoc.getElementById('card-root') as HTMLElement
+      const canvas = await html2canvas(target, {
+        scale: 4, useCORS: true, allowTaint: false, backgroundColor: '#ffffff',
+      })
+      document.body.removeChild(iframe)
 
       const dataUrl = canvas.toDataURL('image/png')
 
@@ -197,16 +220,18 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
     setPositions({
       qrTop: -1,
       qrRight: -0.15,
-      qrSize: 40,
+      qrSize: 39,
       contentTop: 56,
       contentLeft: 11,
       avatarTop: 16,
       infoTop: 5,
       infoLeft: 2.1,
       infoPaddingLeft: 10,
-      idTop: 8.6,
-      idLeft: 7,
-    nameTop: 24,
+      idLabelTop: -12,
+      idLabelLeft: 7,
+      idValueTop: -11,
+      idValueLeft: 55,
+      nameTop: 26.5,
       nameLeft: 7,
       academicTop: 47,
       academicLeft: 7,
@@ -223,6 +248,7 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
       const url = URL.createObjectURL(file)
       setEmployee((prev) => ({ ...prev, avatar: url }))
     }
+    e.target.value = ''
   }
 
   return (
@@ -255,6 +281,9 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                 transform: none !important;
                 box-shadow: none !important;
                 margin: 0 !important;
+            }
+            [data-print-border="none"] {
+                border: none !important;
             }
         }
     `}</style>
@@ -310,14 +339,16 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                 }}
               >
                 {/* Avatar */}
-                <div
-                  className="w-[76px] h-[114px] bg-white border border-gray-100 overflow-hidden shrink-0 rounded-[4px]"
-                  data-avatar
-                  style={{ marginTop: `${positions.avatarTop}px`,
-                  transform: `translate(-2.5px, -4.5px)`}}
-                >
+                  <div
+                    className="w-[75px] h-[113px] bg-white overflow-hidden shrink-0 rounded-[4px]"
+                    data-avatar
+                    data-print-border="none"
+                    data-pdf-style="border-radius: 4px"
+                    style={{ marginTop: `${positions.avatarTop}px`,
+                    transform: `translate(-2.5px, -4.5px)`}}
+                  >
                   {employee.avatar ? (
-                    <img src={employee.avatar} crossOrigin="anonymous" className="w-full h-full object-cover" />
+                    <img src={employee.avatar} crossOrigin="anonymous" className="w-full h-full object-cover" data-pdf-style="border-radius: 4px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
                       <User size={40} />
@@ -335,23 +366,41 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                     paddingLeft: `${positions.infoPaddingLeft}px`
                   }}
                 >
-                  {/* Employee ID */}
+                  {/* Employee ID - Label */}
                   <div
                     className="absolute text-[#111111]"
+                    data-pdf-offset="2.5"
                     style={{
-                      top: `${positions.idTop - 20}px`,
-                      left: `${positions.idLeft}px`,
+                      top: `${positions.idLabelTop}px`,
+                      left: `${positions.idLabelLeft}px`,
+                      transform: 'scaleY(1.1)',
                       whiteSpace: 'nowrap'
                     }}
                   >
                     <span style={{ fontSize: `${fontSizes.idLabel}pt`, fontFamily: 'Acumin Pro',
-                      transform: 'scaleY(1.1)',
                       transformOrigin: 'bottom'
                     }}>
                       Mã số / ID:{' '}
-                      <span style={{ fontSize: `${fontSizes.idValue}pt`, fontWeight: 'bold', marginLeft: '6px' }}>
-                        {employee.ma_nhan_vien}
-                      </span>
+                    </span>
+                  </div>
+
+                  {/* Employee ID - Value */}
+                  <div
+                    className="absolute text-[#111111]"
+                    data-pdf-offset="-1"
+                    data-pdf-style="color:#111111"
+                    style={{
+                      top: `${positions.idValueTop}px`,
+                      left: `${positions.idValueLeft}px`,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <span style={{ fontSize: `${fontSizes.idValue}pt`, fontWeight: 'bold', fontFamily: 'Acumin Pro',
+                      display: 'inline-block',
+                      transform: 'scaleY(1.1)',
+                      transformOrigin: 'bottom'
+                    }}>
+                      {employee.ma_nhan_vien}
                     </span>
                   </div>
 
@@ -374,7 +423,10 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                         transformOrigin: 'bottom'
                       }}
                     >
-                      Họ và tên / Full name:
+                      Họ và tên /
+                      <span style={{ fontSize: `${fontSizes.nameLabel * 0.85}pt` }}>
+                        {' '}Full name:
+                      </span>
                     </span>
                   </div>
 
@@ -763,6 +815,36 @@ export default function IntheCardDesign({ employee: initialEmployee }: IntheCard
                   minValue={-50}
                   value={positions.infoTop}
                   onChange={(val) => setPositions((prev) => ({ ...prev, infoTop: val as number }))}
+                  size="sm"
+                  color="primary"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] text-gray-400 font-bold uppercase">
+                  <span>ID Value (Trên):</span> <span>{positions.idValueTop}px</span>
+                </div>
+                <Slider
+                  step={0.1}
+                  maxValue={50}
+                  minValue={-20}
+                  value={positions.idValueTop}
+                  onChange={(val) => setPositions((prev) => ({ ...prev, idValueTop: val as number }))}
+                  size="sm"
+                  color="primary"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] text-gray-400 font-bold uppercase">
+                  <span>ID Value (Trái):</span> <span>{positions.idValueLeft}px</span>
+                </div>
+                <Slider
+                  step={0.1}
+                  maxValue={200}
+                  minValue={0}
+                  value={positions.idValueLeft}
+                  onChange={(val) => setPositions((prev) => ({ ...prev, idValueLeft: val as number }))}
                   size="sm"
                   color="primary"
                 />
