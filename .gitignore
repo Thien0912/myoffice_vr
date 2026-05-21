@@ -12,9 +12,3 @@ docs/*
 .opencode.json
 opencode.json
 .env
-IntheCardDesign.tsx
-DonviPage.tsx
-DonviDemoPage.tsx
-TinhChatPage.tsx
-FormBaoMat.tsx
-FormTinhChat.tsx

@@ -275,7 +275,6 @@ const LichNghiPhepPage = () => {
               </HrPrimaryButton>
             )}
           </div>
-          </div>
         </header>
 
         {/* Calendar */}
