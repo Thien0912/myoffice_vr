@@ -73,6 +73,7 @@ interface TableHrProps<T = any> {
   onColumnOrderChange?: (columnOrder: string[]) => void
   renderRowFloatingAction?: (row: T) => React.ReactNode
   selectionMode?: 'none' | 'single' | 'multiple'
+  size?: 'md' | 'sm'
 }
 
 const flattenOptions = (options: any[]) => {
@@ -105,7 +106,8 @@ const TableHrCell = memo(
     isRowDisabled,
     enableCopy,
     hasSelection,
-    isLastColumn
+    isLastColumn,
+    size = 'md'
   }: {
     row: any
     col: TableColumnType<any>
@@ -124,7 +126,11 @@ const TableHrCell = memo(
     enableCopy?: boolean
     hasSelection?: boolean
     isLastColumn?: boolean
+    size?: 'md' | 'sm'
   }) => {
+    const isSm = size === 'sm'
+    const cellPad = isSm ? 'px-3 py-2 min-h-10' : 'px-4 py-3 min-h-12'
+    const cellText = isSm ? 'text-xs' : 'text-sm'
     const val = row[col.uid]
     const rowId = (row[primaryKey] ?? index) as string | number
     const [inputValue, setInputValue] = useState('')
@@ -286,7 +292,7 @@ const TableHrCell = memo(
 
         content = (
           <div
-            className={cn('w-full h-full flex items-center px-4 py-3 min-h-12 group/edit relative min-w-0', isCellEditable && 'cursor-pointer', col.className)}
+            className={cn(`w-full h-full flex items-center ${cellPad} group/edit relative min-w-0`, isCellEditable && 'cursor-pointer', col.className)}
             onClick={
               isCellEditable
                 ? (e) => {
@@ -299,7 +305,7 @@ const TableHrCell = memo(
           >
             <div
               className={cn(
-                'text-sm w-full text-gray-700 dark:text-gray-200',
+                `${cellText} w-full text-gray-700 dark:text-gray-200`,
                 typeof displayContent === 'string' || typeof displayContent === 'number'
                   ? 'truncate'
                   : ''
@@ -407,8 +413,13 @@ export default function TableHr<T extends Record<string, unknown>>({
   columnOrder: externalColumnOrder,
   onColumnOrderChange,
   renderRowFloatingAction,
-  selectionMode = 'multiple'
+  selectionMode = 'multiple',
+  size = 'md'
 }: TableHrProps<T>) {
+  const isSm = size === 'sm'
+  const headPad = isSm ? 'py-2.5 px-3' : 'py-3.5 px-4'
+  const headText = isSm ? 'text-xs' : 'text-sm'
+
   // ── Internal state ──
   const [internalWidths, setInternalWidths] = useState<Record<string, number>>({})
   const [isMobile, setIsMobile] = useState(false)
@@ -833,7 +844,7 @@ export default function TableHr<T extends Record<string, unknown>>({
                         disabled={!enableColumnReorder}
                         style={thStyle}
                         className={cn(
-                          'py-3.5 px-4 text-sm font-bold text-left select-none group relative',
+                          `${headPad} ${headText} font-bold text-left select-none group relative`,
                           'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
                           hBorder, thBorder, vBorder,
                           col.pinned ? 'bg-gray-50 dark:bg-gray-800' : '',
@@ -856,7 +867,7 @@ export default function TableHr<T extends Record<string, unknown>>({
                                     aria-label="Select all"
                                   />
                                 ) : (
-                                  <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                                  <span className={`${headText} font-bold text-gray-400 uppercase tracking-wider`}>
                                     {col.name || '#'}
                                   </span>
                                 )}
@@ -867,7 +878,7 @@ export default function TableHr<T extends Record<string, unknown>>({
                                 <div className="flex items-center h-full w-full pr-1">
                                   <span
                                     className={cn(
-                                      'text-sm truncate block',
+                                      `${headText} truncate block`,
                                       col.sortable !== false && enableSorting
                                         ? 'cursor-pointer'
                                         : ''
@@ -1120,6 +1131,7 @@ export default function TableHr<T extends Record<string, unknown>>({
                               enableCopy={enableCopy}
                               hasSelection={!!onSelectionChange}
                               isLastColumn={col.uid === sortedColumns[sortedColumns.length - 1].uid}
+                              size={size}
                             />
                           </td>
                         )
@@ -1169,7 +1181,7 @@ export default function TableHr<T extends Record<string, unknown>>({
                     <tr>
                       <th
                         className={cn(
-                          'py-3.5 px-4 text-sm font-bold text-left select-none',
+                          `${headPad} ${headText} font-bold text-left select-none`,
                           'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
                           hBorder, thBorder, vBorder
                         )}
@@ -1178,7 +1190,7 @@ export default function TableHr<T extends Record<string, unknown>>({
                         }}
                       >
                         <div className="flex items-center h-full w-full pr-1">
-                          <span className="text-sm truncate block font-semibold">{columns.find(c => c.uid === activeDragUid)?.name}</span>
+                          <span className={`${headText} truncate block font-semibold`}>{columns.find(c => c.uid === activeDragUid)?.name}</span>
                         </div>
                       </th>
                     </tr>

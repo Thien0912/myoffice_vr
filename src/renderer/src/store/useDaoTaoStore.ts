@@ -27,8 +27,7 @@ const DEFAULT_VISIBLE_COLUMNS = [
     'noi_dung',
     'ngay_bat_dau',
     'ngay_ket_thuc',
-    'trang_thai',
-    'actions'
+    'trang_thai'
 ]
 
 export const useDaoTaoStore = create<DaoTaoStore>()(

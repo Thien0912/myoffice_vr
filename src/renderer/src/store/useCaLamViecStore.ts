@@ -26,7 +26,7 @@ const DEFAULT_VISIBLE_COLUMNS = [
     'ca_lam_viec',
     'check_in',
     'check_out',
-    'actions'
+    'no_leave_day'
 ]
 
 export const useCaLamViecStore = create<CaLamViecStore>()(

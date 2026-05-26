@@ -28,8 +28,7 @@ const DEFAULT_VISIBLE_COLUMNS = [
   'ten_viet_tat',
   'loai',
   'email',
-  'nguoi_co_quyen_van_thu',
-  'actions'
+  'nguoi_co_quyen_van_thu'
 ]
 
 export const useDonviStore = create<DonviStore>()(

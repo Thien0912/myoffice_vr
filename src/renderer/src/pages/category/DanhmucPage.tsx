@@ -289,34 +289,30 @@ export default function DanhmucPage() {
         <div className="flex h-full w-full bg-white overflow-hidden">
             {/* Sidebar */}
             <div
-                className="flex-none bg-gray-50/50 border-r border-gray-100 flex flex-col overflow-hidden relative origin-top-left"
-                style={{ width: sidebarWidth, zoom: 0.90 }}
+                className="flex-none bg-gray-50/50 border-r border-gray-100 flex flex-col overflow-hidden relative"
+                style={{ width: sidebarWidth }}
             >
-                <div className="flex-1 overflow-y-auto py-2">
+                <div className="flex-1 overflow-y-auto py-1.5">
                     <div className="flex flex-col">
                         {items.map((item) => {
                                 const hasChild = item.children && item.children.length > 0
 
                                 return (
                                     <div key={item.id}>
-                                        {/* Header - không có mũi tên, không thể đóng lại, không highlight, thụt vào */}
                                         <div
-                                            className="w-full flex items-center justify-between pl-2 pr-4 py-2 text-sm text-gray-700"
+                                            className="w-full flex items-center justify-between pl-2 pr-3 py-1.5 text-xs text-gray-700"
                                         >
-                                            {/* LEFT */}
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5">
                                                 <span>{item.label}</span>
                                             </div>
 
-                                            {/* RIGHT */}
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-gray-400">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[10px] text-gray-400">
                                                     {item.count}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        {/* Children submenu - luôn hiển thị */}
                                         {hasChild && (
                                             <div className="flex flex-col bg-gray-50/50">
                                                 {item.children?.map((child: any) => {
@@ -332,7 +328,6 @@ export default function DanhmucPage() {
                                                                 onClick={() => {
                                                                     if (hasGrandChild) {
                                                                         toggleExpand(child.id)
-                                                                        // Nếu đang collapse thì expand và chọn mục con đầu tiên
                                                                         if (!isChildExpanded && child.children && child.children.length > 0) {
                                                                             setSelectedSubItem(child.children[0].id)
                                                                         }
@@ -340,19 +335,18 @@ export default function DanhmucPage() {
                                                                         setSelectedSubItem(child.id)
                                                                     }
                                                                 }}
-                                                                className={`w-full flex items-center justify-between px-6 pr-4 py-2 text-sm transition-colors cursor-pointer border-l-2 ${
+                                                                className={`w-full flex items-center justify-between px-5 pr-3 py-1.5 text-xs transition-colors cursor-pointer border-l-2 ${
                                                                     isChildActive
                                                                         ? 'bg-blue-100 text-blue-700 font-medium border-blue-400'
                                                                         : 'text-gray-600 hover:bg-gray-100 border-gray-200'
                                                                 }`}
                                                             >
                                                                 <span>{child.label}</span>
-                                                                <span className={`text-xs ${isChildActive ? 'text-blue-500 font-semibold' : 'text-gray-400'}`}>
+                                                                <span className={`text-[10px] ${isChildActive ? 'text-blue-500 font-semibold' : 'text-gray-400'}`}>
                                                                     {child.count ?? 0}
                                                                 </span>
                                                             </button>
 
-                                                            {/* Grand-children submenu (các trường) */}
                                                             {hasGrandChild && isChildExpanded && (
                                                                 <div className="flex flex-col bg-gray-50/30">
                                                                     {child.children?.map((grand: any) => {
@@ -361,14 +355,14 @@ export default function DanhmucPage() {
                                                                             <button
                                                                                 key={grand.id}
                                                                                 onClick={() => setSelectedSubItem(grand.id)}
-                                                                                className={`w-full flex items-center justify-between px-6 pr-4 py-2 text-sm transition-colors cursor-pointer border-l-2 ${
+                                                                                className={`w-full flex items-center justify-between px-5 pr-3 py-1.5 text-xs transition-colors cursor-pointer border-l-2 ${
                                                                                     isGrandSelected
                                                                                         ? 'bg-blue-50 text-blue-600 font-medium border-blue-400'
                                                                                         : 'text-gray-500 hover:bg-gray-100 border-gray-200'
                                                                                 }`}
                                                                             >
-                                                                                <span className="flex items-center"><span className="text-gray-400 mr-2">•</span>{grand.label}</span>
-                                                                                <span className={`text-xs ${isGrandSelected ? 'text-blue-500 font-semibold' : 'text-gray-400'}`}>
+                                                                                <span className="flex items-center"><span className="text-gray-400 mr-1.5">•</span>{grand.label}</span>
+                                                                                <span className={`text-[10px] ${isGrandSelected ? 'text-blue-500 font-semibold' : 'text-gray-400'}`}>
                                                                                     {grand.count ?? 0}
                                                                                 </span>
                                                                             </button>
@@ -386,7 +380,6 @@ export default function DanhmucPage() {
                             })}
                     </div>
                 </div>
-                {/* Resize handle */}
                 <div
                     onMouseDown={handleMouseDown}
                     className="absolute -right-2 top-0 h-full w-4 cursor-col-resize z-20 flex justify-center group"
@@ -396,9 +389,7 @@ export default function DanhmucPage() {
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0 flex flex-col overflow-hidden origin-top-left" style={{ zoom: 0.90 }}>
-                {/* Page content */}
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 overflow-hidden">
                     {renderContent()}
                 </div>

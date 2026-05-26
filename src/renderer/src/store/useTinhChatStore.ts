@@ -24,8 +24,7 @@ interface TinhChatStore {
 const DEFAULT_VISIBLE_COLUMNS = [
     'stt',
     'ten_tinh_chat',
-    'class_color',
-    'actions'
+    'class_color'
 ]
 
 export const useTinhChatStore = create<TinhChatStore>()(

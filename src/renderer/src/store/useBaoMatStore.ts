@@ -24,8 +24,7 @@ interface BaoMatStore {
 const DEFAULT_VISIBLE_COLUMNS = [
     'stt',
     'ten_bao_mat',
-    'class_color',
-    'actions'
+    'class_color'
 ]
 
 export const useBaoMatStore = create<BaoMatStore>()(

@@ -27,7 +27,7 @@ const DEFAULT_VISIBLE_COLUMNS = [
     'ten_loai_phep',
     'so_ngay_mac_dinh',
     'co_tinh_luong',
-    'actions'
+    'ghi_chu'
 ]
 
 export const useLoaiNghiPhepStore = create<LoaiNghiPhepStore>()(

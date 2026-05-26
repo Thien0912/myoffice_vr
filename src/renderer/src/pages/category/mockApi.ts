@@ -185,12 +185,12 @@ function createMockService<T extends Record<string, any>>(
   return {
     _pk: pk,
 
-    fetch(params: Record<string, any> = {}, id?: string | number) {
-      if (id !== undefined && id !== null) {
-        const item = data.find((d) => String(d[pk]) === String(id))
-        return Promise.resolve({ success: true, data: item ? cloneItem(item) : null })
-      }
-
+    fetch(params: Record<string, any> = {}): Promise<{
+      success: boolean
+      data: T[]
+      recordsTotal: number
+      recordsFiltered: number
+    }> {
       let filtered = [...data]
       const search = (params.searchValue || '').toString().toLowerCase()
       const searchKey = params.searchKey
@@ -246,7 +246,7 @@ function createMockService<T extends Record<string, any>>(
       return Promise.resolve({ success: true, data: item ? cloneItem(item) : null })
     },
 
-    create(payload: any) {
+    create(payload: any): Promise<{ success: boolean; data?: T; message?: string }> {
       const plain = formDataToObject(payload)
       const id = nextId++
       const mapped = opts?.mapPayload ? opts.mapPayload(plain) : plain
@@ -276,7 +276,7 @@ function createMockService<T extends Record<string, any>>(
       return Promise.resolve({ success: true, data: cloneItem(newItem) })
     },
 
-    update(id: string | number, payload: any) {
+    update(id: string | number, payload: any): Promise<{ success: boolean; message?: string }> {
       const idx = data.findIndex((d) => String(d[pk]) === String(id))
       if (idx >= 0) {
         const oldItem = { ...data[idx] }
@@ -307,7 +307,7 @@ function createMockService<T extends Record<string, any>>(
       return Promise.resolve({ success: false, message: 'Không tìm thấy bản ghi' })
     },
 
-    delete(id: string | number) {
+    delete(id: string | number): Promise<{ success: boolean; message?: string }> {
       const idx = data.findIndex((d) => String(d[pk]) === String(id))
       if (idx >= 0) {
         const deletedItem = { ...data[idx] }

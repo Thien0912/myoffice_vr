@@ -28,8 +28,7 @@ const DEFAULT_VISIBLE_COLUMNS = [
   'tien_to',
   'hau_to',
   'id_don_vi',
-  'thuoc_nhom',
-  'actions'
+  'thuoc_nhom'
 ]
 
 export const useLoaiVanBanStore = create<DonviStore>()(

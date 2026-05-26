@@ -1,4 +1,5 @@
 ﻿import { Button, Input, Spinner, Tooltip, useDisclosure, Divider } from '@heroui/react'
+import { HrPrimaryButton } from '@renderer/components/hero-custom/HrPrimaryButton'
 import { vitricongviecAxios } from './mockApi'
 import DebugBox from '@renderer/components/DebugBox'
 import TableColumnVisibility from '@renderer/components/table/TableColumnVisibility'
@@ -369,7 +370,7 @@ export default function ViTriCongViecPage() {
     <div className="flex flex-col w-full h-full overflow-hidden relative bg-white">
       <DebugBox />
       
-      <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 bg-white border-b border-gray-100">
+      <div className="px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-2 bg-white border-b border-gray-100">
           <div className="flex items-center gap-2 w-full md:w-auto flex-1">
             <Input
               type="search"
@@ -378,7 +379,7 @@ export default function ViTriCongViecPage() {
               value={typingValue}
               onValueChange={setTypingValue}
               className="w-full md:max-w-[300px]"
-              classNames={{ inputWrapper: 'h-8 bg-white border border-gray-200 rounded-lg' }}
+              classNames={{ inputWrapper: 'h-7 bg-white border border-gray-200 rounded-lg' }}
               endContent={isFetching && <Spinner size="sm" />}
             />
 
@@ -425,15 +426,12 @@ export default function ViTriCongViecPage() {
                         >
                             Lịch sử
                         </Button>
-            <Button
-                            color="primary"
-                            size="sm"
+            <HrPrimaryButton
                             startContent={<Plus size={18} />}
-                            className="font-medium rounded-md px-4"
                             onPress={() => onOpenDrawerAdd()}
                         >
                             Thêm mới
-                        </Button>
+                        </HrPrimaryButton>
             <TableColumnVisibility
               columns={allColumns}
               visibleColumns={new Set(filters.initial_visible_columns)}
@@ -445,7 +443,7 @@ export default function ViTriCongViecPage() {
         </div>
 
             <div className="flex-1 overflow-hidden relative bg-white min-h-0">
-                <TableHr
+                <TableHr size="sm"
           data={rows}
           columns={visibleColumns}
           isLoading={isLoading}

@@ -26,11 +26,14 @@ export default function TableColumnVisibility({
   columns,
   label
 }: TableColumnVisibilityProps) {
-  const [localKeys, setLocalKeys] = useState<Set<string>>(visibleColumns)
+  // Lọc bỏ các uid không tồn tại trong columns (tránh dữ liệu cũ persist gây sai lệch)
+  const sanitizeKeys = (keys: Set<string>) => new Set(Array.from(keys).filter((uid) => columns.some((col) => col.uid === uid)))
+
+  const [localKeys, setLocalKeys] = useState<Set<string>>(sanitizeKeys(visibleColumns))
 
   useEffect(() => {
-    setLocalKeys(visibleColumns)
-  }, [visibleColumns])
+    setLocalKeys(sanitizeKeys(visibleColumns))
+  }, [visibleColumns, columns])
 
   return (
     <div className="inline-flex">
@@ -38,11 +41,11 @@ export default function TableColumnVisibility({
           <Button
             variant="ghost"
             isIconOnly
-            className={`bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 h-10 font-medium ${localKeys.size !== columns.length ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'}`}
+            className={`bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 h-10 font-medium ${columns.some((col) => !localKeys.has(col.uid)) ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'}`}
           >
             <div className="relative">
               <Columns3Cog size={18} />
-              {localKeys.size !== columns.length && (
+              {columns.some((col) => !localKeys.has(col.uid)) && (
                 <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white dark:ring-gray-800" />
               )}
             </div>

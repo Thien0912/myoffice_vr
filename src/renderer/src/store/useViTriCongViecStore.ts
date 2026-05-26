@@ -24,8 +24,7 @@ interface ViTriCongViecStore {
 const DEFAULT_VISIBLE_COLUMNS = [
     'stt',
     'ten_cong_viec',
-    'ten_cong_viec_en',
-    'actions'
+    'ten_cong_viec_en'
 ]
 
 export const useViTriCongViecStore = create<ViTriCongViecStore>()(

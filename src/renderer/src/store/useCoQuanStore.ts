@@ -23,8 +23,7 @@ interface CoQuanStore {
 
 const DEFAULT_VISIBLE_COLUMNS = [
     'stt',
-    'ten_co_quan',
-    'actions'
+    'ten_co_quan'
 ]
 
 export const useCoQuanStore = create<CoQuanStore>()(
